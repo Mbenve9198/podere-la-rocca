@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, Clock, RotateCw } from "lucide-react"
+import { CheckCircle, Clock, RotateCw, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type Order = {
@@ -25,6 +25,7 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 
   const translations = {
     it: {
@@ -39,7 +40,9 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       euro: "Euro",
       from: "da",
       loading: "Caricamento ordini...",
-      error: "Errore nel caricamento degli ordini"
+      error: "Errore nel caricamento degli ordini",
+      refreshing: "Aggiornamento in corso...",
+      refresh: "Aggiorna"
     },
     en: {
       title: "Your orders",
@@ -53,60 +56,69 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       euro: "Euro",
       from: "from",
       loading: "Loading orders...",
-      error: "Error loading orders"
+      error: "Error loading orders",
+      refreshing: "Refreshing...",
+      refresh: "Refresh"
     },
   }
 
   const t = translations[language as keyof typeof translations]
 
+  // Funzione per caricare gli ordini dal database
+  const fetchOrders = async () => {
+    try {
+      setIsRefreshing(true);
+      setError(null);
+      
+      // In futuro qui possiamo aggiungere un parametro per filtrare gli ordini per cliente
+      const response = await fetch(`/api/orders?customerName=${encodeURIComponent(customerName)}`);
+      
+      if (!response.ok) {
+        throw new Error('Errore nel recupero degli ordini');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.data)) {
+        // Converte i dati degli ordini dal formato API al formato componente
+        const formattedOrders: Order[] = data.data.map((order: any) => ({
+          id: order._id,
+          items: order.items.map((item: any) => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          total: order.total,
+          status: order.status,
+          timestamp: new Date(order.createdAt).getTime(),
+          location: order.location,
+          locationDetail: order.locationDetail
+        }));
+        
+        setOrders(formattedOrders);
+      } else {
+        setOrders([]);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento degli ordini:', err);
+      setError('Errore nel caricamento degli ordini');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   // Carica gli ordini dal database al montaggio del componente
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // In futuro qui possiamo aggiungere un parametro per filtrare gli ordini per cliente
-        const response = await fetch(`/api/orders?customerName=${encodeURIComponent(customerName)}`);
-        
-        if (!response.ok) {
-          throw new Error('Errore nel recupero degli ordini');
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && Array.isArray(data.data)) {
-          // Converte i dati degli ordini dal formato API al formato componente
-          const formattedOrders: Order[] = data.data.map((order: any) => ({
-            id: order._id,
-            items: order.items.map((item: any) => ({
-              id: item.productId,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity
-            })),
-            total: order.total,
-            status: order.status,
-            timestamp: new Date(order.createdAt).getTime(),
-            location: order.location,
-            locationDetail: order.locationDetail
-          }));
-          
-          setOrders(formattedOrders);
-        } else {
-          setOrders([]);
-        }
-      } catch (err) {
-        console.error('Errore nel caricamento degli ordini:', err);
-        setError('Errore nel caricamento degli ordini');
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
+    setIsLoading(true);
     fetchOrders();
   }, [customerName]);
+
+  // Funzione per aggiornare manualmente gli ordini
+  const handleRefresh = () => {
+    fetchOrders();
+  };
 
   // Get status icon based on order status
   const getStatusIcon = (status: string) => {
@@ -195,7 +207,22 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="text-xl font-playful text-black mb-6 text-center">{t.title}</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-playful text-black">{t.title}</h1>
+        <Button 
+          size="icon" 
+          variant="outline" 
+          className="rounded-full h-10 w-10 bg-amber-100 border-amber-300 hover:bg-amber-200"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <RefreshCw className="h-5 w-5 text-amber-800 animate-spin" />
+          ) : (
+            <RefreshCw className="h-5 w-5 text-amber-800" />
+          )}
+        </Button>
+      </div>
 
       {orders.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-6 text-center">
