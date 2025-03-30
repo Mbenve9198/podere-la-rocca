@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, ShoppingCart } from "lucide-react"
+import { Plus, ShoppingCart, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
@@ -57,7 +57,8 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       total: "Totale",
       euro: "Euro",
       loading: "Caricamento...",
-      error: "Errore nel caricamento dei dati"
+      error: "Errore nel caricamento dei dati",
+      inCart: "Nel carrello",
     },
     en: {
       back: "Back",
@@ -66,7 +67,8 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       total: "Total",
       euro: "Euro",
       loading: "Loading...",
-      error: "Error loading data"
+      error: "Error loading data",
+      inCart: "In cart",
     },
   }
 
@@ -175,6 +177,12 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
     onProceedToSummary(cart)
   }
 
+  // Funzione per ottenere la quantità di un articolo nel carrello
+  const getItemQuantityInCart = (itemId: string): number => {
+    const item = cart.find(cartItem => cartItem.id === itemId);
+    return item ? item.quantity : 0;
+  }
+
   // Visualizza un indicatore di caricamento
   if (loading) {
     return (
@@ -218,30 +226,49 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
         </ScrollArea>
 
         <div className="mt-4 space-y-4">
-          {products[activeSubcategory]?.map((item) => (
-            <div key={item._id} className="flex justify-between items-center p-4 bg-white rounded-lg shadow">
-              <div className="flex-1 pr-4">
-                <h3 className="font-medium text-black">
-                  {item.translations[language as keyof typeof item.translations]}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {t.euro} {item.price.toFixed(2)}
-                </p>
+          {products[activeSubcategory]?.map((item) => {
+            const quantityInCart = getItemQuantityInCart(item._id);
+            
+            return (
+              <div key={item._id} className="flex justify-between items-center p-4 bg-white rounded-lg shadow">
+                <div className="flex-1 pr-4">
+                  <h3 className="font-medium text-black">
+                    {item.translations[language as keyof typeof item.translations]}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t.euro} {item.price.toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  {quantityInCart > 0 && (
+                    <div className="flex items-center mr-2">
+                      <Badge className="bg-amber-500">{quantityInCart}</Badge>
+                    </div>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`h-8 w-8 rounded-full ${
+                      quantityInCart > 0 
+                        ? "bg-green-100 hover:bg-green-200 text-green-700" 
+                        : "bg-amber-100 hover:bg-amber-200 text-black"
+                    } flex-shrink-0`}
+                    onClick={() => addToCart({
+                      id: item._id,
+                      name: item.translations[language as keyof typeof item.translations],
+                      price: item.price
+                    })}
+                  >
+                    {quantityInCart > 0 ? (
+                      <Plus className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 rounded-full bg-amber-100 hover:bg-amber-200 text-black flex-shrink-0"
-                onClick={() => addToCart({
-                  id: item._id,
-                  name: item.translations[language as keyof typeof item.translations],
-                  price: item.price
-                })}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     )
@@ -257,30 +284,45 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
 
     return (
       <div className="space-y-4 mt-6">
-        {products[activeCategory]?.map((item) => (
-          <div key={item._id} className="flex justify-between items-center p-4 bg-white rounded-lg shadow">
-            <div>
-              <h3 className="font-medium text-black">
-                {item.translations[language as keyof typeof item.translations]}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {t.euro} {item.price.toFixed(2)}
-              </p>
+        {products[activeCategory]?.map((item) => {
+          const quantityInCart = getItemQuantityInCart(item._id);
+          
+          return (
+            <div key={item._id} className="flex justify-between items-center p-4 bg-white rounded-lg shadow">
+              <div>
+                <h3 className="font-medium text-black">
+                  {item.translations[language as keyof typeof item.translations]}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {t.euro} {item.price.toFixed(2)}
+                </p>
+              </div>
+              <div className="flex items-center">
+                {quantityInCart > 0 && (
+                  <div className="flex items-center mr-2">
+                    <Badge className="bg-amber-500">{quantityInCart}</Badge>
+                  </div>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={`h-8 w-8 rounded-full ${
+                    quantityInCart > 0 
+                      ? "bg-green-100 hover:bg-green-200 text-green-700" 
+                      : "bg-amber-100 hover:bg-amber-200 text-black"
+                  }`}
+                  onClick={() => addToCart({
+                    id: item._id,
+                    name: item.translations[language as keyof typeof item.translations],
+                    price: item.price
+                  })}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full bg-amber-100 hover:bg-amber-200 text-black"
-              onClick={() => addToCart({
-                id: item._id,
-                name: item.translations[language as keyof typeof item.translations],
-                price: item.price
-              })}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     )
   }
