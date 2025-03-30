@@ -1,15 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  ClockIcon, 
+  Loader2Icon, 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  RefreshCwIcon, 
+  ChevronDownIcon, 
+  LogOutIcon,
+  ArrowLeftIcon
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 // Tipi di dati
 interface OrderItem {
@@ -36,12 +44,16 @@ interface Order {
 export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [adminName, setAdminName] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('waiting');
   const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [actionToConfirm, setActionToConfirm] = useState<{orderId: string, newStatus: string, actionName: string} | null>(null);
+  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
-  const { toast } = useToast();
 
   // Verifica l'autenticazione
   useEffect(() => {
@@ -52,7 +64,9 @@ export default function AdminDashboardPage() {
 
         if (data.success && data.admin) {
           setIsAuthenticated(true);
-          fetchOrders();
+          setAdminName(data.admin.name);
+          await fetchOrders();
+          setupAutoRefresh();
         } else {
           router.push('/admin');
         }
@@ -63,11 +77,29 @@ export default function AdminDashboardPage() {
     }
 
     checkAuth();
+    return () => {
+      if (refreshInterval.current) {
+        clearInterval(refreshInterval.current);
+        refreshInterval.current = null;
+      }
+    };
   }, [router]);
 
+  // Imposta un aggiornamento automatico ogni 20 secondi
+  const setupAutoRefresh = () => {
+    if (refreshInterval.current) {
+      clearInterval(refreshInterval.current);
+    }
+    refreshInterval.current = setInterval(() => {
+      fetchOrders(true);
+    }, 20000);
+  };
+
   // Carica gli ordini
-  const fetchOrders = async () => {
-    setLoading(true);
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
+    if (silent) setRefreshing(true);
+    
     try {
       let url = '/api/admin/orders';
       if (statusFilter !== 'all') {
@@ -79,28 +111,49 @@ export default function AdminDashboardPage() {
       
       if (data.success) {
         setOrders(data.data);
+        
+        // Se c'è un ordine selezionato, aggiorna i suoi dati
+        if (selectedOrder) {
+          const updatedOrder = data.data.find((order: Order) => order._id === selectedOrder._id);
+          if (updatedOrder) {
+            setSelectedOrder(updatedOrder);
+          }
+        }
       } else {
-        toast({
-          title: 'Errore',
-          description: 'Impossibile caricare gli ordini',
-          variant: 'destructive',
-        });
+        if (!silent) {
+          toast.error('Impossibile caricare gli ordini');
+        }
       }
     } catch (error) {
       console.error('Errore durante il recupero degli ordini:', error);
-      toast({
-        title: 'Errore',
-        description: 'Si è verificato un errore durante il caricamento degli ordini',
-        variant: 'destructive',
-      });
+      if (!silent) {
+        toast.error('Errore di connessione');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Gestisce il cambio di filtro di stato
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setLoading(true);
+    // Delay necessario per consentire l'aggiornamento dello state di statusFilter
+    setTimeout(() => {
+      fetchOrders();
+    }, 50);
   };
 
   // Aggiorna lo stato dell'ordine
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      setConfirmDialogOpen(false);
+      setActionToConfirm(null);
+      
+      // Mostra toast di operazione in corso
+      toast.loading('Aggiornamento in corso...');
+      
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -112,98 +165,102 @@ export default function AdminDashboardPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Aggiorna l'ordine nella lista
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId ? { ...order, status: newStatus as any } : order
-          )
-        );
-
-        // Aggiorna l'ordine selezionato se necessario
-        if (selectedOrder && selectedOrder._id === orderId) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus as any });
+        // Aggiorna gli ordini
+        await fetchOrders(true);
+        
+        // Toasts per tipi di aggiornamento diversi
+        if (newStatus === 'completed') {
+          toast.success('Ordine completato con successo');
+        } else if (newStatus === 'processing') {
+          toast.success('Ordine in preparazione');
+        } else if (newStatus === 'cancelled') {
+          toast.success('Ordine annullato');
+        } else {
+          toast.success('Stato aggiornato');
         }
-
-        toast({
-          title: 'Stato aggiornato',
-          description: `L'ordine #${data.data.orderNumber} è stato aggiornato a ${getStatusTranslation(newStatus)}`,
-        });
       } else {
-        toast({
-          title: 'Errore',
-          description: data.message || 'Impossibile aggiornare lo stato dell\'ordine',
-          variant: 'destructive',
-        });
+        toast.error(data.message || 'Impossibile aggiornare lo stato dell\'ordine');
       }
     } catch (error) {
       console.error('Errore durante l\'aggiornamento dello stato dell\'ordine:', error);
-      toast({
-        title: 'Errore',
-        description: 'Si è verificato un errore durante l\'aggiornamento dello stato',
-        variant: 'destructive',
-      });
+      toast.error('Errore di connessione');
     }
+  };
+
+  // Gestisce l'apertura del dialog di conferma
+  const confirmAction = (orderId: string, newStatus: string, actionName: string) => {
+    setActionToConfirm({ orderId, newStatus, actionName });
+    setConfirmDialogOpen(true);
   };
 
   // Gestisce il logout
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/admin/auth/logout', {
-        method: 'POST',
-      });
-
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+      toast.success('Logout effettuato');
       router.push('/admin');
     } catch (error) {
       console.error('Errore durante il logout:', error);
+      toast.error('Errore durante il logout');
+    }
+  };
+
+  // Ottiene il colore e l'icona del badge in base allo stato
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'waiting':
+        return { 
+          icon: <ClockIcon className="h-3.5 w-3.5" />, 
+          variant: 'secondary',
+          text: 'In attesa'
+        };
+      case 'processing':
+        return { 
+          icon: <Loader2Icon className="h-3.5 w-3.5 animate-spin" />, 
+          variant: 'warning',
+          text: 'In preparazione' 
+        };
+      case 'completed':
+        return { 
+          icon: <CheckCircleIcon className="h-3.5 w-3.5" />, 
+          variant: 'success',
+          text: 'Completato'
+        };
+      case 'cancelled':
+        return { 
+          icon: <XCircleIcon className="h-3.5 w-3.5" />, 
+          variant: 'destructive',
+          text: 'Annullato'
+        };
+      default:
+        return { 
+          icon: null, 
+          variant: 'default',
+          text: status
+        };
     }
   };
 
   // Formatta la data in formato leggibile
-  const formatDate = (dateString: string) => {
+  const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+    return date.toLocaleTimeString('it-IT', {
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  // Traduce lo stato dell'ordine in italiano
-  const getStatusTranslation = (status: string) => {
-    switch (status) {
-      case 'waiting':
-        return 'In attesa';
-      case 'processing':
-        return 'In preparazione';
-      case 'completed':
-        return 'Completato';
-      case 'cancelled':
-        return 'Annullato';
-      default:
-        return status;
-    }
-  };
-
-  // Ottiene il colore del badge in base allo stato
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'waiting':
-        return 'secondary';
-      case 'processing':
-        return 'warning';
-      case 'completed':
-        return 'success';
-      case 'cancelled':
-        return 'destructive';
-      default:
-        return 'default';
-    }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }) + ' ' + formatTime(dateString);
   };
 
   // Ottiene la posizione in italiano
-  const getLocationTranslation = (location: string) => {
+  const getLocationName = (location: string) => {
     switch (location) {
       case 'camera':
         return 'Camera';
@@ -223,203 +280,329 @@ export default function AdminDashboardPage() {
   };
 
   if (!isAuthenticated) {
-    return null; // Non mostrare nulla finché non si verifica l'autenticazione
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="container mx-auto max-w-5xl">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Pannello di Amministrazione</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Esci
+    <div className="min-h-screen bg-amber-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-amber-100 py-3 px-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
+        <div className="flex items-center">
+          <h1 className="text-lg font-semibold text-amber-800">Podere La Rocca</h1>
+        </div>
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            className="text-amber-700 p-2" 
+            onClick={() => fetchOrders()} 
+            disabled={refreshing}
+          >
+            <RefreshCwIcon className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
-        </header>
+          <Button 
+            variant="ghost" 
+            className="text-amber-700 p-2" 
+            onClick={handleLogout}
+          >
+            <LogOutIcon className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
 
-        <Tabs defaultValue={statusFilter} onValueChange={setStatusFilter} className="mb-6">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="all" onClick={() => { setStatusFilter('all'); fetchOrders(); }}>
-              Tutti
-            </TabsTrigger>
-            <TabsTrigger value="waiting" onClick={() => { setStatusFilter('waiting'); fetchOrders(); }}>
+      {/* Filtri */}
+      <div className="px-4 py-3 bg-white sticky top-14 shadow-sm z-10">
+        <Tabs 
+          value={statusFilter} 
+          onValueChange={handleStatusChange} 
+          className="w-full"
+        >
+          <TabsList className="w-full flex p-1 bg-amber-100/50">
+            <TabsTrigger 
+              value="waiting" 
+              className="flex-1 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+            >
               In attesa
             </TabsTrigger>
-            <TabsTrigger value="processing" onClick={() => { setStatusFilter('processing'); fetchOrders(); }}>
+            <TabsTrigger 
+              value="processing" 
+              className="flex-1 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+            >
               In preparazione
             </TabsTrigger>
-            <TabsTrigger value="completed" onClick={() => { setStatusFilter('completed'); fetchOrders(); }}>
-              Completati
-            </TabsTrigger>
-            <TabsTrigger value="cancelled" onClick={() => { setStatusFilter('cancelled'); fetchOrders(); }}>
-              Annullati
+            <TabsTrigger 
+              value="all" 
+              className="flex-1 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+            >
+              Tutti
             </TabsTrigger>
           </TabsList>
         </Tabs>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ordini</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">Caricamento ordini in corso...</div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-8">Nessun ordine trovato</div>
-            ) : (
-              <ScrollArea className="h-[calc(100vh-280px)]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Numero</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Posizione</TableHead>
-                      <TableHead>Totale</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order._id} className="cursor-pointer hover:bg-muted/50" onClick={() => openOrderDetails(order)}>
-                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                        <TableCell>{order.customerName}</TableCell>
-                        <TableCell>
-                          {getLocationTranslation(order.location)}
-                          {order.locationDetail && <span className="block text-xs text-muted-foreground">{order.locationDetail}</span>}
-                        </TableCell>
-                        <TableCell>{order.total.toFixed(2)}€</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(order.status) as any}>
-                            {getStatusTranslation(order.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(order.createdAt)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+      {/* Main Content */}
+      <main className="flex-1 px-4 py-3">
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2Icon className="h-8 w-8 text-amber-600 animate-spin" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-10 px-4">
+            <p className="text-amber-800 font-medium">
+              {statusFilter === 'all' 
+                ? 'Non ci sono ordini da visualizzare'
+                : statusFilter === 'waiting'
+                ? 'Non ci sono ordini in attesa'
+                : 'Non ci sono ordini in preparazione'
+              }
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {orders.map((order) => {
+              const statusBadge = getStatusBadge(order.status);
+              return (
+                <li 
+                  key={order._id}
+                  onClick={() => openOrderDetails(order)}
+                  className="bg-white rounded-lg shadow-sm overflow-hidden active:bg-amber-50 cursor-pointer transition-colors"
+                >
+                  <div className="p-3 flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-1">
+                        <div className="font-semibold">{order.customerName}</div>
+                        <Badge 
+                          variant={statusBadge.variant as any} 
+                          className="ml-2 flex items-center gap-1 text-xs"
+                        >
+                          {statusBadge.icon}
+                          {statusBadge.text}
+                        </Badge>
+                      </div>
+                      
+                      <div className="text-xs text-amber-700 flex items-center">
+                        <span>Ordine #{order.orderNumber}</span>
+                        <span className="mx-1">•</span>
+                        <span>{formatTime(order.createdAt)}</span>
+                      </div>
+                      
+                      <div className="text-xs text-amber-700 mt-1">
+                        {getLocationName(order.location)}
+                        {order.locationDetail && ` - ${order.locationDetail}`}
+                      </div>
+                      
+                      <div className="mt-2">
+                        {order.items.length === 1 ? (
+                          <div className="text-sm">
+                            {order.items[0].quantity}x {order.items[0].name}
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            {order.items.length} prodotti • {order.total.toFixed(2)}€
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <ChevronDownIcon className="h-5 w-5 text-amber-400 mt-1" />
+                  </div>
+                  
+                  {/* Azioni rapide per ordini in attesa o in preparazione */}
+                  {(order.status === 'waiting' || order.status === 'processing') && (
+                    <div className="flex border-t border-amber-100">
+                      {order.status === 'waiting' && (
+                        <>
+                          <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              openOrderDetails(order);
-                            }}
+                              confirmAction(order._id, 'processing', 'Avvia preparazione');
+                            }} 
+                            className="flex-1 bg-amber-50 py-2 font-medium text-amber-700 text-sm border-r border-amber-100 active:bg-amber-100"
                           >
-                            Dettagli
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
+                            Avvia
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmAction(order._id, 'cancelled', 'Annulla ordine');
+                            }} 
+                            className="flex-1 bg-amber-50 py-2 font-medium text-red-500 text-sm active:bg-amber-100"
+                          >
+                            Annulla
+                          </button>
+                        </>
+                      )}
+                      
+                      {order.status === 'processing' && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmAction(order._id, 'completed', 'Completa ordine');
+                          }} 
+                          className="flex-1 bg-amber-50 py-2 font-medium text-green-600 text-sm active:bg-amber-100"
+                        >
+                          Completa
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </main>
 
-        {/* Dialog per i dettagli dell'ordine */}
-        <Dialog open={orderDetailsOpen} onOpenChange={setOrderDetailsOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
-            {selectedOrder && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex justify-between items-center">
-                    <span>Ordine #{selectedOrder.orderNumber}</span>
-                    <Badge variant={getStatusBadgeVariant(selectedOrder.status) as any}>
-                      {getStatusTranslation(selectedOrder.status)}
+      {/* Dialog per i dettagli dell'ordine */}
+      <Dialog open={orderDetailsOpen} onOpenChange={setOrderDetailsOpen}>
+        <DialogContent className="sm:max-w-md max-h-[90vh]">
+          {selectedOrder && (
+            <ScrollArea className="max-h-[75vh] pr-4 -mr-4">
+              <div className="relative">
+                <button 
+                  className="absolute top-0 right-0 p-1 text-amber-700"
+                  onClick={() => setOrderDetailsOpen(false)}
+                >
+                  <ArrowLeftIcon className="h-5 w-5" />
+                </button>
+                
+                <div className="mb-6 pt-1">
+                  <div className="flex justify-between items-start">
+                    <h2 className="text-xl font-semibold text-amber-800">
+                      Ordine #{selectedOrder.orderNumber}
+                    </h2>
+                    
+                    <Badge 
+                      variant={getStatusBadge(selectedOrder.status).variant as any}
+                      className="flex items-center gap-1 mt-1"
+                    >
+                      {getStatusBadge(selectedOrder.status).icon}
+                      {getStatusBadge(selectedOrder.status).text}
                     </Badge>
-                  </DialogTitle>
-                </DialogHeader>
-
-                <div className="grid grid-cols-2 gap-4 my-4">
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Cliente</h3>
-                    <p className="text-lg">{selectedOrder.customerName}</p>
                   </div>
+                  
+                  <div className="text-sm text-amber-600 mt-1">
+                    {formatDate(selectedOrder.createdAt)}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
                   <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Posizione</h3>
-                    <p className="text-lg">
-                      {getLocationTranslation(selectedOrder.location)}
+                    <label className="text-xs font-medium text-amber-600">Cliente</label>
+                    <p className="font-medium">{selectedOrder.customerName}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs font-medium text-amber-600">Posizione</label>
+                    <p className="font-medium">
+                      {getLocationName(selectedOrder.location)}
                       {selectedOrder.locationDetail && (
-                        <span className="block text-sm">{selectedOrder.locationDetail}</span>
+                        <span className="block text-sm font-normal text-amber-700">
+                          {selectedOrder.locationDetail}
+                        </span>
                       )}
                     </p>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Data ordine</h3>
-                    <p>{formatDate(selectedOrder.createdAt)}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Ultimo aggiornamento</h3>
-                    <p>{formatDate(selectedOrder.updatedAt)}</p>
-                  </div>
                 </div>
-
+                
                 {selectedOrder.notes && (
-                  <div className="my-4">
-                    <h3 className="font-semibold text-sm text-muted-foreground">Note</h3>
-                    <p className="p-2 bg-muted rounded-md">{selectedOrder.notes}</p>
+                  <div className="mb-6">
+                    <label className="text-xs font-medium text-amber-600">Note</label>
+                    <p className="p-2 bg-amber-50 rounded-md text-sm mt-1">
+                      {selectedOrder.notes}
+                    </p>
                   </div>
                 )}
-
-                <div className="my-6">
-                  <h3 className="font-semibold mb-2">Articoli ordinati</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Articolo</TableHead>
-                        <TableHead className="text-right">Quantità</TableHead>
-                        <TableHead className="text-right">Prezzo</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedOrder.items.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{item.price.toFixed(2)}€</TableCell>
-                          <TableCell className="text-right">{(item.price * item.quantity).toFixed(2)}€</TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-right font-semibold">Totale ordine</TableCell>
-                        <TableCell className="text-right font-semibold">{selectedOrder.total.toFixed(2)}€</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                
+                <div className="mb-6">
+                  <label className="text-xs font-medium text-amber-600 mb-2 block">
+                    Prodotti ordinati
+                  </label>
+                  
+                  <ul className="bg-amber-50 rounded-lg overflow-hidden divide-y divide-amber-100">
+                    {selectedOrder.items.map((item, index) => (
+                      <li key={index} className="flex justify-between items-center p-3">
+                        <div className="flex items-start gap-2">
+                          <div className="bg-amber-200 text-amber-800 font-medium h-6 w-6 rounded-full flex items-center justify-center text-xs">
+                            {item.quantity}
+                          </div>
+                          <span>{item.name}</span>
+                        </div>
+                        <span className="font-medium text-amber-800">
+                          {(item.price * item.quantity).toFixed(2)}€
+                        </span>
+                      </li>
+                    ))}
+                    
+                    <li className="flex justify-between items-center p-3 font-medium bg-amber-100/50">
+                      <span>Totale</span>
+                      <span className="text-amber-800">{selectedOrder.total.toFixed(2)}€</span>
+                    </li>
+                  </ul>
                 </div>
-
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 justify-end mt-4">
-                  {selectedOrder.status === 'waiting' && (
-                    <>
-                      <Button
-                        variant="default"
-                        onClick={() => updateOrderStatus(selectedOrder._id, 'processing')}
-                      >
-                        Inizia preparazione
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => updateOrderStatus(selectedOrder._id, 'cancelled')}
-                      >
-                        Annulla ordine
-                      </Button>
-                    </>
-                  )}
-                  {selectedOrder.status === 'processing' && (
-                    <Button
-                      variant="default"
-                      onClick={() => updateOrderStatus(selectedOrder._id, 'completed')}
+                
+                {/* Azioni ordine */}
+                {selectedOrder.status === 'waiting' && (
+                  <div className="flex space-x-2 mb-2">
+                    <Button 
+                      className="flex-1 bg-amber-600 hover:bg-amber-700"
+                      onClick={() => confirmAction(selectedOrder._id, 'processing', 'Avvia preparazione')}
+                    >
+                      Avvia preparazione
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => confirmAction(selectedOrder._id, 'cancelled', 'Annulla ordine')}
+                    >
+                      Annulla ordine
+                    </Button>
+                  </div>
+                )}
+                
+                {selectedOrder.status === 'processing' && (
+                  <div className="mb-2">
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => confirmAction(selectedOrder._id, 'completed', 'Completa ordine')}
                     >
                       Segna come completato
                     </Button>
-                  )}
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog di conferma */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-xs">
+          {actionToConfirm && (
+            <div className="text-center pt-2">
+              <h3 className="text-lg font-medium mb-3">Conferma azione</h3>
+              <p className="mb-5">
+                Sei sicuro di voler {actionToConfirm.actionName.toLowerCase()}?
+              </p>
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setConfirmDialogOpen(false)}
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  className="flex-1 bg-amber-600 hover:bg-amber-700"
+                  onClick={() => updateOrderStatus(actionToConfirm.orderId, actionToConfirm.newStatus)}
+                >
+                  Conferma
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
