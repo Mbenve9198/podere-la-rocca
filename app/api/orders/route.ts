@@ -2,6 +2,54 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 
+export async function GET(req: NextRequest) {
+  try {
+    console.log('API GET /orders: Ricevuta richiesta di recupero ordini');
+    
+    // Estrai i parametri dalla query
+    const url = new URL(req.url);
+    const customerName = url.searchParams.get('customerName');
+    
+    console.log(`API GET /orders: Parametri query - customerName: ${customerName}`);
+    
+    // Connessione al database
+    console.log('API GET /orders: Tentativo di connessione al database...');
+    await dbConnect();
+    console.log('API GET /orders: Connessione al database riuscita');
+    
+    // Costruisci il filtro per la query
+    const filter: any = {};
+    if (customerName) {
+      // Utilizzare una regex per trovare corrispondenze parziali
+      filter.customerName = { $regex: customerName, $options: 'i' };
+    }
+    
+    console.log('API GET /orders: Filtro query:', filter);
+    
+    // Recupera gli ordini filtrati, ordinati per data di creazione decrescente
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(20); // limita a 20 ordini più recenti per performance
+    
+    console.log(`API GET /orders: Recuperati ${orders.length} ordini`);
+    
+    return NextResponse.json({
+      success: true,
+      data: orders
+    });
+  } catch (error: any) {
+    console.error('API GET /orders: Errore durante il recupero degli ordini:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Errore durante il recupero degli ordini',
+        error: error.message 
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log('API /orders: Ricevuta richiesta di creazione ordine');
