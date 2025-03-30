@@ -54,20 +54,35 @@ export default function LocationSelector({ onSelectLocation, onSelectDetail, lan
   // Carica le posizioni dal database
   useEffect(() => {
     const fetchLocations = async () => {
+      console.log('[Frontend] Inizio caricamento locations');
       try {
         setLoading(true);
+        console.log('[Frontend] Esecuzione fetch /api/locations');
         const response = await fetch('/api/locations');
+        console.log('[Frontend] Risposta ricevuta, status:', response.status);
+        
         if (!response.ok) {
+          console.error('[Frontend] Risposta non valida:', response.status, response.statusText);
           throw new Error('Errore nel caricamento delle posizioni');
         }
+        
         const data = await response.json();
+        console.log('[Frontend] Dati ricevuti:', data);
+        
+        if (!data.success) {
+          console.error('[Frontend] API ha restituito errore:', data.message);
+          throw new Error(data.message || 'Errore sconosciuto');
+        }
+        
         setLocations(data.data);
+        console.log(`[Frontend] Impostate ${data.data.length} locations`);
         setError(null);
       } catch (err) {
-        console.error('Errore nel caricamento delle posizioni:', err);
+        console.error('[Frontend] ERRORE nel caricamento delle posizioni:', err);
         setError(err instanceof Error ? err.message : 'Errore sconosciuto');
       } finally {
         setLoading(false);
+        console.log('[Frontend] Caricamento completato (successo o errore)');
       }
     };
 

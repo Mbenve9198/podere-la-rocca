@@ -40,23 +40,32 @@ class MongoConnection {
 
   // Metodo per connettersi al database
   public async connect(): Promise<typeof mongoose> {
+    console.log('[MongoDB] Tentativo di connessione al database...');
+    console.log(`[MongoDB] URI (mascherato): ${MONGODB_URI.replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://****:****@')}`);
+    
     if (this._cache.conn) {
+      console.log('[MongoDB] Riutilizzo connessione esistente');
       return this._cache.conn;
     }
 
     if (!this._cache.promise) {
+      console.log('[MongoDB] Creazione nuova connessione');
       this._cache.promise = mongoose.connect(MONGODB_URI, options)
         .then((mongoose) => {
-          console.log('Connessione a MongoDB stabilita con successo');
+          console.log('[MongoDB] Connessione a MongoDB stabilita con successo');
           return mongoose;
         });
+    } else {
+      console.log('[MongoDB] Utilizzo promise esistente');
     }
 
     try {
+      console.log('[MongoDB] Attesa completamento connessione...');
       this._cache.conn = await this._cache.promise;
+      console.log('[MongoDB] Connessione completata');
     } catch (e) {
       this._cache.promise = null;
-      console.error('Errore di connessione a MongoDB:', e);
+      console.error('[MongoDB] ERRORE di connessione a MongoDB:', e);
       throw e;
     }
 
