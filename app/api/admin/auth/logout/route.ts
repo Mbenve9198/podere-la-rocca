@@ -7,10 +7,13 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Logout effettuato con successo',
     });
-    
-    // Rimuovi il cookie del token JWT
-    response.cookies.delete('admin_token');
-    
+
+    // Cancella il cookie di autenticazione
+    response.cookies.delete({
+      name: 'admin_token',
+      path: '/',
+    });
+
     return response;
   } catch (error: any) {
     console.error('Errore durante il logout:', error);
