@@ -134,21 +134,53 @@ export default function Home() {
     }
   }
 
-  const handlePlaceOrder = () => {
-    const newOrder: Order = {
-      id: uuidv4(),
-      items: [...cart],
-      total: cart.reduce((total, item) => total + item.price * item.quantity, 0),
-      status: "waiting",
-      timestamp: Date.now(),
-      location,
-      locationDetail,
+  const handlePlaceOrder = async () => {
+    try {
+      // Prepara i dati dell'ordine
+      const orderData = {
+        customerName: name,
+        location,
+        locationDetail,
+        items: cart,
+      };
+      
+      // Effettua la chiamata API per creare l'ordine
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Ordine creato con successo:', result);
+        
+        // Crea l'ordine locale per la visualizzazione nella cronologia
+        const newOrder: Order = {
+          id: result.data.id || uuidv4(), // Usa l'ID dal server se disponibile
+          items: [...cart],
+          total: cart.reduce((total, item) => total + item.price * item.quantity, 0),
+          status: "waiting",
+          timestamp: Date.now(),
+          location,
+          locationDetail,
+        };
+        
+        setOrders([newOrder, ...orders]);
+        setCart([]);
+        setStep("order-history");
+      } else {
+        console.error('Errore nella creazione dell\'ordine:', result.message);
+        // Qui potresti mostrare un messaggio di errore all'utente
+      }
+    } catch (error) {
+      console.error('Errore durante l\'invio dell\'ordine:', error);
+      // Qui potresti mostrare un messaggio di errore all'utente
     }
-
-    setOrders([newOrder, ...orders])
-    setCart([])
-    setStep("order-history")
-  }
+  };
 
   const handleNewOrder = () => {
     setStep("menu-categories")

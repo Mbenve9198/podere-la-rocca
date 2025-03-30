@@ -23,6 +23,8 @@ type OrderHistoryProps = {
 
 export default function OrderHistory({ language, onNewOrder, customerName }: OrderHistoryProps) {
   const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   const translations = {
     it: {
@@ -36,6 +38,8 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       items: "prodotti",
       euro: "Euro",
       from: "da",
+      loading: "Caricamento ordini...",
+      error: "Errore nel caricamento degli ordini"
     },
     en: {
       title: "Your orders",
@@ -48,29 +52,61 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       items: "items",
       euro: "Euro",
       from: "from",
+      loading: "Loading orders...",
+      error: "Error loading orders"
     },
   }
 
   const t = translations[language as keyof typeof translations]
 
-  // Simulate order status updates
+  // Carica gli ordini dal database al montaggio del componente
   useEffect(() => {
-    const interval = setInterval(() => {
-      setOrders((currentOrders) => {
-        return currentOrders.map((order) => {
-          // Randomly progress order status
-          if (order.status === "waiting" && Math.random() > 0.7) {
-            return { ...order, status: "processing" }
-          } else if (order.status === "processing" && Math.random() > 0.6) {
-            return { ...order, status: "completed" }
-          }
-          return order
-        })
-      })
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [])
+    const fetchOrders = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // In futuro qui possiamo aggiungere un parametro per filtrare gli ordini per cliente
+        const response = await fetch(`/api/orders?customerName=${encodeURIComponent(customerName)}`);
+        
+        if (!response.ok) {
+          throw new Error('Errore nel recupero degli ordini');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.data)) {
+          // Converte i dati degli ordini dal formato API al formato componente
+          const formattedOrders: Order[] = data.data.map((order: any) => ({
+            id: order._id,
+            items: order.items.map((item: any) => ({
+              id: item.productId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity
+            })),
+            total: order.total,
+            status: order.status,
+            timestamp: new Date(order.createdAt).getTime(),
+            location: order.location,
+            locationDetail: order.locationDetail
+          }));
+          
+          setOrders(formattedOrders);
+        } else {
+          setOrders([]);
+        }
+      } catch (err) {
+        console.error('Errore nel caricamento degli ordini:', err);
+        setError('Errore nel caricamento degli ordini');
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchOrders();
+  }, [customerName]);
 
   // Get status icon based on order status
   const getStatusIcon = (status: string) => {
@@ -134,6 +170,27 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
     }
 
     return locationNames[location] || location
+  }
+
+  // Visualizza un indicatore di caricamento durante il recupero degli ordini
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-md text-center py-8">
+        <p className="text-gray-600">{t.loading}</p>
+      </div>
+    );
+  }
+
+  // Visualizza un messaggio di errore se il caricamento fallisce
+  if (error) {
+    return (
+      <div className="w-full max-w-md text-center py-8">
+        <p className="text-red-500">{t.error}</p>
+        <Button className="mt-4 bg-amber-500 hover:bg-amber-600 text-white font-medium" onClick={onNewOrder}>
+          {t.newOrder}
+        </Button>
+      </div>
+    );
   }
 
   return (
