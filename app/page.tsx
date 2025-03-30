@@ -88,8 +88,20 @@ export default function Home() {
   }
 
   const handleSelectCategory = (category: string) => {
-    setSelectedCategory(category)
-    setStep("menu")
+    // Mappa da nomi di categoria a ID MongoDB
+    const categoryIdMap: Record<string, string> = {
+      cocktails: "67e9424db092d6d1d2ff8524",
+      softDrinks: "67e9424db092d6d1d2ff8525",
+      caffetteria: "67e9424db092d6d1d2ff8526",
+      lightLunch: "67e9424db092d6d1d2ff8527",
+      // Aggiungi qui tutte le altre categorie se necessario
+    };
+    
+    // Converti il nome della categoria nell'ID corrispondente
+    const categoryId = categoryIdMap[category] || category;
+    
+    setSelectedCategory(categoryId);
+    setStep("menu");
   }
 
   const handleBackFromMenu = () => {

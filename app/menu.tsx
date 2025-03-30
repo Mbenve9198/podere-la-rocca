@@ -94,6 +94,16 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
         const subCategoriesData = await subCategoriesResponse.json();
         setSubCategories(subCategoriesData.data);
         
+        // Imposta la categoria attiva in base al parametro category
+        if (category) {
+          // Se la categoria passata è valida, la imposta come attiva
+          setActiveCategory(category);
+          console.log(`Impostata categoria attiva: ${category}`);
+        } else if (mainCategoriesData.data.length > 0) {
+          // Altrimenti imposta la prima categoria come attiva
+          setActiveCategory(mainCategoriesData.data[0]._id);
+        }
+        
         // Recupera i prodotti per ogni categoria
         const productsMap: Record<string, ProductType[]> = {};
         
@@ -134,7 +144,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
     };
 
     fetchData();
-  }, []);
+  }, [category]); // Aggiunto category alle dipendenze
 
   const addToCart = (item: { id: string; name: string; price: number }) => {
     setCart((prev) => {
