@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import Product from '@/models/Product';
 
@@ -19,8 +20,15 @@ export async function GET(request: NextRequest) {
     // Crea il filtro in base ai parametri
     const filter: any = {};
     if (category) {
-      filter.category = category;
-      console.log(`[API Products] Filtro impostato per categoria: ${category}`);
+      // Verifica se l'ID è valido e lo converte in ObjectId
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        filter.category = new mongoose.Types.ObjectId(category);
+        console.log(`[API Products] Filtro impostato per categoria (convertito in ObjectId): ${category}`);
+      } else {
+        // Fallback: prova a usare la stringa originale
+        filter.category = category;
+        console.log(`[API Products] Filtro impostato per categoria (stringa): ${category}`);
+      }
     }
 
     console.log(`[API Products] Esecuzione query con filtro:`, JSON.stringify(filter));
@@ -38,21 +46,27 @@ export async function GET(request: NextRequest) {
       
       // Controlla se la categoria esiste nel database
       try {
-        const mongoose = require('mongoose');
-        if (mongoose.Types.ObjectId.isValid(category)) {
-          console.log(`[API Products] ID categoria valido in formato ObjectID`);
+        // Conta tutti i prodotti per verificare se ne esistono
+        const totalProducts = await Product.countDocuments({});
+        console.log(`[API Products] Totale prodotti nel database: ${totalProducts}`);
+        
+        // Mostra un esempio di prodotto per debug
+        if (totalProducts > 0) {
+          const sampleProduct = await Product.findOne({}).lean();
+          console.log(`[API Products] Esempio di prodotto nel database:`, JSON.stringify(sampleProduct));
           
-          // Conta tutti i prodotti per verificare se ne esistono
-          const totalProducts = await Product.countDocuments({});
-          console.log(`[API Products] Totale prodotti nel database: ${totalProducts}`);
-          
-          // Mostra un esempio di prodotto per debug
-          if (totalProducts > 0) {
-            const sampleProduct = await Product.findOne({}).lean();
-            console.log(`[API Products] Esempio di prodotto nel database:`, JSON.stringify(sampleProduct));
+          // Verifica esplicitamente il tipo di categoria nel sample
+          if (sampleProduct && 'category' in sampleProduct) {
+            console.log(`[API Products] Tipo di categoria nel sample: ${typeof sampleProduct.category}`);
+            
+            // Prova una query con l'approccio opposto per debug
+            if (category && mongoose.Types.ObjectId.isValid(category)) {
+              const testQueryWithString = await Product.find({ category: category }).lean();
+              console.log(`[API Products] Test query con stringa: ${testQueryWithString.length} risultati`);
+            } else {
+              console.log(`[API Products] ID categoria non valido o null, skip test query`);
+            }
           }
-        } else {
-          console.log(`[API Products] ID categoria NON valido in formato ObjectID`);
         }
       } catch (err) {
         console.error(`[API Products] Errore durante il controllo di debug:`, err);
