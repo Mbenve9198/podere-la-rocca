@@ -63,6 +63,7 @@ export default function Home() {
       startButton: "INIZIA",
       selectLocation: "SELEZIONA LA TUA POSIZIONE",
       back: "Indietro",
+      viewOrders: "I miei ordini",
     },
     en: {
       subtitle: "ORDER DIRECTLY FROM YOUR LOCATION",
@@ -73,6 +74,7 @@ export default function Home() {
       startButton: "START",
       selectLocation: "SELECT YOUR LOCATION",
       back: "Back",
+      viewOrders: "My orders",
     },
   }
 
@@ -229,7 +231,17 @@ export default function Home() {
   if (step === "user-info") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-end items-center p-4">
+        <header className="flex justify-end items-center p-4 space-x-2">
+          {orders.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setStep("order-history")} 
+              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              {t.viewOrders}
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
             <LanguageFlag language={language} />
           </Button>
@@ -347,9 +359,20 @@ export default function Home() {
             <ChevronLeft className="h-5 w-5 mr-1" />
             {translations[language as keyof typeof translations].back}
           </button>
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setStep("order-history")} 
+              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              {t.viewOrders}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
+              <LanguageFlag language={language} />
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 flex flex-col items-center justify-center p-4">
@@ -379,9 +402,20 @@ export default function Home() {
             <ChevronLeft className="h-5 w-5 mr-1" />
             {translations[language as keyof typeof translations].back}
           </button>
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setStep("order-history")} 
+              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              {t.viewOrders}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
+              <LanguageFlag language={language} />
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 flex flex-col items-center p-4">
@@ -416,9 +450,20 @@ export default function Home() {
             <ChevronLeft className="h-5 w-5 mr-1" />
             {translations[language as keyof typeof translations].back}
           </button>
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setStep("order-history")} 
+              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              {t.viewOrders}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
+              <LanguageFlag language={language} />
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 flex flex-col items-center p-4">
