@@ -80,6 +80,68 @@ export default function Home() {
 
   const t = translations[language as keyof typeof translations]
 
+  // Traduzioni comuni per tutti gli header
+  const commonTrans = {
+    it: {
+      viewOrders: "I miei ordini",
+      back: "Indietro"
+    },
+    en: {
+      viewOrders: "My orders",
+      back: "Back"
+    }
+  };
+
+  // Componente Header riutilizzabile per mantenere coerenza tra le pagine
+  const Header = ({ 
+    showBackButton = false, 
+    onBackClick = () => {}, 
+    showOrdersButton = false,
+    hideLanguageButton = false
+  }) => {
+    const c = commonTrans[language as keyof typeof commonTrans];
+    
+    return (
+      <header className="flex justify-between items-center p-4 bg-amber-50 shadow-sm fixed top-0 left-0 right-0 z-10">
+        <div>
+          {showBackButton && (
+            <button 
+              onClick={onBackClick} 
+              className="flex items-center text-black px-3 py-2 rounded-md hover:bg-amber-100 touch-manipulation"
+            >
+              <ChevronLeft className="h-5 w-5 mr-1" />
+              {c.back}
+            </button>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {showOrdersButton && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setStep("order-history")} 
+              className="text-black border-amber-300 bg-amber-100 hover:bg-amber-200 h-10 px-3 touch-manipulation"
+            >
+              {c.viewOrders}
+            </Button>
+          )}
+          
+          {!hideLanguageButton && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowLanguageSelector(true)} 
+              className="text-black h-10 w-10 p-0 touch-manipulation"
+            >
+              <LanguageFlag language={language} />
+            </Button>
+          )}
+        </div>
+      </header>
+    );
+  };
+
   const handleStartOrdering = () => {
     // If there are existing orders, show order history first
     if (orders.length > 0) {
@@ -192,13 +254,9 @@ export default function Home() {
   if (step === "location") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-end items-center p-4">
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center p-4">
+        <Header hideLanguageButton={false} />
+        
+        <main className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
           <h2 className="text-xl font-playful text-black mb-8 text-center uppercase tracking-tight">
             {t.selectLocation}
           </h2>
@@ -231,23 +289,12 @@ export default function Home() {
   if (step === "user-info") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-end items-center p-4 space-x-2">
-          {orders.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setStep("order-history")} 
-              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
-            >
-              {t.viewOrders}
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center p-6">
+        <Header 
+          showOrdersButton={orders.length > 0} 
+          hideLanguageButton={false}
+        />
+        
+        <main className="flex-1 flex flex-col items-center justify-center p-6 pt-20">
           <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-playful text-black mb-4 uppercase tracking-tight">{t.subtitle}</h2>
 
@@ -283,7 +330,7 @@ export default function Home() {
                       setLocationDetail(null)
                       setStep("location")
                     }}
-                    className="text-gray-800 hover:text-black hover:bg-amber-100"
+                    className="text-gray-800 hover:text-black hover:bg-amber-100 touch-manipulation"
                   >
                     {t.changeLocation}
                   </Button>
@@ -292,7 +339,7 @@ export default function Home() {
             </div>
 
             <Button
-              className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-playful uppercase tracking-wide"
+              className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-playful uppercase tracking-wide h-12 touch-manipulation"
               disabled={!name.trim()}
               onClick={handleStartOrdering}
             >
@@ -319,17 +366,13 @@ export default function Home() {
   if (step === "order-history") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-between items-center p-4">
-          <button onClick={() => setStep("user-info")} className="flex items-center text-black">
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            {translations[language as keyof typeof translations].back}
-          </button>
-          <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-            <LanguageFlag language={language} />
-          </Button>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center p-4">
+        <Header 
+          showBackButton={true} 
+          onBackClick={() => setStep("user-info")} 
+          hideLanguageButton={false}
+        />
+        
+        <main className="flex-1 flex flex-col items-center p-4 pt-20">
           <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} />
         </main>
 
@@ -351,31 +394,14 @@ export default function Home() {
   if (step === "menu-categories") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-between items-center p-4">
-          <button
-            onClick={() => setStep(orders.length > 0 ? "order-history" : "user-info")}
-            className="flex items-center text-black"
-          >
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            {translations[language as keyof typeof translations].back}
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setStep("order-history")} 
-              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
-            >
-              {t.viewOrders}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-              <LanguageFlag language={language} />
-            </Button>
-          </div>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center p-4">
+        <Header 
+          showBackButton={true} 
+          onBackClick={() => setStep(orders.length > 0 ? "order-history" : "user-info")} 
+          showOrdersButton={true}
+          hideLanguageButton={false}
+        />
+        
+        <main className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
           <MenuCategories language={language} onSelectCategory={handleSelectCategory} />
         </main>
 
@@ -397,28 +423,14 @@ export default function Home() {
   if (step === "menu" && selectedCategory) {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-between items-center p-4">
-          <button onClick={handleBackFromMenu} className="flex items-center text-black">
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            {translations[language as keyof typeof translations].back}
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setStep("order-history")} 
-              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
-            >
-              {t.viewOrders}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-              <LanguageFlag language={language} />
-            </Button>
-          </div>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center p-4">
+        <Header 
+          showBackButton={true} 
+          onBackClick={handleBackFromMenu} 
+          showOrdersButton={true}
+          hideLanguageButton={false}
+        />
+        
+        <main className="flex-1 flex flex-col items-center p-4 pt-20">
           <Menu
             language={language}
             category={selectedCategory}
@@ -445,28 +457,14 @@ export default function Home() {
   if (step === "order-summary") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <header className="flex justify-between items-center p-4">
-          <button onClick={handleBackFromSummary} className="flex items-center text-black">
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            {translations[language as keyof typeof translations].back}
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setStep("order-history")} 
-              className="text-black border-amber-300 bg-amber-50 hover:bg-amber-100"
-            >
-              {t.viewOrders}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowLanguageSelector(true)} className="text-black">
-              <LanguageFlag language={language} />
-            </Button>
-          </div>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center p-4">
+        <Header 
+          showBackButton={true} 
+          onBackClick={handleBackFromSummary} 
+          showOrdersButton={true}
+          hideLanguageButton={false}
+        />
+        
+        <main className="flex-1 flex flex-col items-center p-4 pt-20">
           <OrderSummary
             cart={cart}
             updateCart={updateCart}
