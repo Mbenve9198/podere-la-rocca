@@ -17,60 +17,35 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     console.log(`[API Products] Parametro category: ${category || 'non specificato'}`);
     
-    // Crea il filtro in base ai parametri
-    const filter: any = {};
+    let products = [];
+    
     if (category) {
-      // Verifica se l'ID è valido e lo converte in ObjectId
-      if (mongoose.Types.ObjectId.isValid(category)) {
-        filter.category = new mongoose.Types.ObjectId(category);
-        console.log(`[API Products] Filtro impostato per categoria (convertito in ObjectId): ${category}`);
-      } else {
-        // Fallback: prova a usare la stringa originale
-        filter.category = category;
-        console.log(`[API Products] Filtro impostato per categoria (stringa): ${category}`);
-      }
-    }
-
-    console.log(`[API Products] Esecuzione query con filtro:`, JSON.stringify(filter));
-    
-    // Recupera i prodotti dal database
-    const products = await Product.find(filter)
-      .sort({ order: 1 })
-      .lean()
-      .maxTimeMS(3000);
-    
-    console.log(`[API Products] Query completata, trovati ${products.length} prodotti`);
-    
-    if (products.length === 0) {
-      console.log(`[API Products] ATTENZIONE: Nessun prodotto trovato per la categoria ${category}`);
+      console.log(`[API Products] Ricerca prodotti per categoria: ${category}`);
       
-      // Controlla se la categoria esiste nel database
-      try {
-        // Conta tutti i prodotti per verificare se ne esistono
-        const totalProducts = await Product.countDocuments({});
-        console.log(`[API Products] Totale prodotti nel database: ${totalProducts}`);
-        
-        // Mostra un esempio di prodotto per debug
-        if (totalProducts > 0) {
-          const sampleProduct = await Product.findOne({}).lean();
-          console.log(`[API Products] Esempio di prodotto nel database:`, JSON.stringify(sampleProduct));
-          
-          // Verifica esplicitamente il tipo di categoria nel sample
-          if (sampleProduct && 'category' in sampleProduct) {
-            console.log(`[API Products] Tipo di categoria nel sample: ${typeof sampleProduct.category}`);
-            
-            // Prova una query con l'approccio opposto per debug
-            if (category && mongoose.Types.ObjectId.isValid(category)) {
-              const testQueryWithString = await Product.find({ category: category }).lean();
-              console.log(`[API Products] Test query con stringa: ${testQueryWithString.length} risultati`);
-            } else {
-              console.log(`[API Products] ID categoria non valido o null, skip test query`);
-            }
+      // Utilizziamo un'aggregation pipeline per confrontare le categorie come stringhe
+      products = await Product.aggregate([
+        {
+          $addFields: {
+            // Converte campo category in stringa per confronto
+            categoryStr: { $toString: "$category" }
           }
+        },
+        {
+          $match: {
+            // Confronta la stringa convertita con l'ID richiesto
+            categoryStr: category
+          }
+        },
+        {
+          $sort: { order: 1 }
         }
-      } catch (err) {
-        console.error(`[API Products] Errore durante il controllo di debug:`, err);
-      }
+      ]).exec();
+      
+      console.log(`[API Products] Trovati ${products.length} prodotti con aggregation`);
+    } else {
+      // Se non c'è categoria, recupera tutti i prodotti
+      products = await Product.find({}).sort({ order: 1 }).lean();
+      console.log(`[API Products] Trovati ${products.length} prodotti totali`);
     }
     
     // Restituisce i prodotti come risposta JSON
