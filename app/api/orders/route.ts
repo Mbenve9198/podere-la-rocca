@@ -4,13 +4,20 @@ import Order from '@/models/Order';
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('API /orders: Ricevuta richiesta di creazione ordine');
+    
+    // Connessione al database
+    console.log('API /orders: Tentativo di connessione al database...');
     await dbConnect();
+    console.log('API /orders: Connessione al database riuscita');
     
     // Estrai i dati dell'ordine dalla richiesta
     const data = await req.json();
+    console.log('API /orders: Dati ordine ricevuti:', JSON.stringify(data));
     
     // Verifica che i dati necessari siano presenti
     if (!data.customerName || !data.location || !data.items || data.items.length === 0) {
+      console.log('API /orders: Dati mancanti per l\'ordine', data);
       return NextResponse.json(
         { success: false, message: 'Dati mancanti per l\'ordine' },
         { status: 400 }
@@ -22,40 +29,78 @@ export async function POST(req: NextRequest) {
       (sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity,
       0
     );
+    console.log(`API /orders: Totale ordine calcolato: ${total}`);
     
-    // Crea un nuovo ordine
-    const newOrder = new Order({
-      customerName: data.customerName,
-      location: data.location,
-      locationDetail: data.locationDetail || null,
-      items: data.items.map((item: any) => ({
-        productId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      })),
-      total: total,
-      status: 'waiting',
-      notes: data.notes || '',
-    });
-    
-    // Salva l'ordine nel database
-    await newOrder.save();
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Ordine creato con successo',
-      data: {
-        id: newOrder._id,
-        orderNumber: newOrder.orderNumber,
-        status: newOrder.status,
-        createdAt: newOrder.createdAt,
-      },
-    });
+    try {
+      // Crea un nuovo ordine
+      console.log('API /orders: Creazione nuovo ordine...');
+      const newOrder = new Order({
+        customerName: data.customerName,
+        location: data.location,
+        locationDetail: data.locationDetail || null,
+        items: data.items.map((item: any) => ({
+          productId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total: total,
+        status: 'waiting',
+        notes: data.notes || '',
+      });
+      
+      // Salva l'ordine nel database
+      console.log('API /orders: Tentativo di salvataggio ordine...');
+      const savedOrder = await newOrder.save();
+      console.log(`API /orders: Ordine salvato con ID: ${savedOrder._id}`);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Ordine creato con successo',
+        data: {
+          id: savedOrder._id,
+          orderNumber: savedOrder.orderNumber,
+          status: savedOrder.status,
+          createdAt: savedOrder.createdAt,
+        },
+      });
+    } catch (saveError: any) {
+      // Errore specifico durante il salvataggio dell'ordine
+      console.error('API /orders: Errore durante il salvataggio dell\'ordine:', saveError);
+      
+      // Fornisci un messaggio di errore più specifico in base al tipo di errore
+      if (saveError.name === 'ValidationError') {
+        const validationErrors = Object.keys(saveError.errors).map(field => 
+          `${field}: ${saveError.errors[field].message}`
+        ).join(', ');
+        
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: `Errore di validazione: ${validationErrors}`,
+            error: saveError.message 
+          },
+          { status: 400 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Errore durante il salvataggio dell\'ordine', 
+          error: saveError.message 
+        },
+        { status: 500 }
+      );
+    }
   } catch (error: any) {
-    console.error('Errore durante la creazione dell\'ordine:', error);
+    console.error('API /orders: Errore generale durante la creazione dell\'ordine:', error);
     return NextResponse.json(
-      { success: false, message: 'Errore durante la creazione dell\'ordine' },
+      { 
+        success: false, 
+        message: 'Errore durante la creazione dell\'ordine',
+        error: error.message 
+      },
       { status: 500 }
     );
   }

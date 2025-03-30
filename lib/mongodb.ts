@@ -4,79 +4,43 @@ import mongoose from 'mongoose';
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
 if (!MONGODB_URI) {
-  throw new Error('Definisci la variabile d\'ambiente MONGODB_URI');
+  throw new Error('Assicurati di aver definito MONGODB_URI nelle variabili d\'ambiente');
 }
 
-// Opzioni per la connessione MongoDB
-const options = {
-  bufferCommands: false,
-  serverSelectionTimeoutMS: 5000, // Timeout di selezione del server
-  connectTimeoutMS: 10000,        // Timeout di connessione
-  socketTimeoutMS: 45000,         // Timeout socket
-};
+let cachedConnection: typeof mongoose | null = null;
 
-// Interfaccia per la cache di connessione
-interface ConnectionCache {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-}
-
-// Singleton per la connessione MongoDB
-class MongoConnection {
-  private static instance: MongoConnection;
-  private _cache: ConnectionCache = {
-    conn: null,
-    promise: null,
-  };
-
-  private constructor() {}
-
-  public static getInstance(): MongoConnection {
-    if (!MongoConnection.instance) {
-      MongoConnection.instance = new MongoConnection();
-    }
-    return MongoConnection.instance;
+async function dbConnect(retries = 3): Promise<typeof mongoose> {
+  if (cachedConnection) {
+    console.log('MongoDB: Utilizzo connessione esistente');
+    return cachedConnection;
   }
 
-  // Metodo per connettersi al database
-  public async connect(): Promise<typeof mongoose> {
-    console.log('[MongoDB] Tentativo di connessione al database...');
-    console.log(`[MongoDB] URI (mascherato): ${MONGODB_URI.replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://****:****@')}`);
+  console.log('MongoDB: Tentativo di connessione...');
+  
+  try {
+    const opts = {
+      bufferCommands: true,
+    };
+
+    const connection = await mongoose.connect(MONGODB_URI!, opts);
+    console.log('MongoDB: Connessione stabilita con successo');
     
-    if (this._cache.conn) {
-      console.log('[MongoDB] Riutilizzo connessione esistente');
-      return this._cache.conn;
+    cachedConnection = connection;
+    return connection;
+  } catch (error: any) {
+    console.error(`MongoDB: Errore di connessione: ${error.message}`);
+    
+    if (retries > 0) {
+      console.log(`MongoDB: Nuovo tentativo di connessione (rimasti ${retries} tentativi)...`);
+      // Attesa esponenziale tra i tentativi
+      const waitTime = Math.pow(2, 4 - retries) * 100;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return dbConnect(retries - 1);
     }
-
-    if (!this._cache.promise) {
-      console.log('[MongoDB] Creazione nuova connessione');
-      this._cache.promise = mongoose.connect(MONGODB_URI, options)
-        .then((mongoose) => {
-          console.log('[MongoDB] Connessione a MongoDB stabilita con successo');
-          return mongoose;
-        });
-    } else {
-      console.log('[MongoDB] Utilizzo promise esistente');
-    }
-
-    try {
-      console.log('[MongoDB] Attesa completamento connessione...');
-      this._cache.conn = await this._cache.promise;
-      console.log('[MongoDB] Connessione completata');
-    } catch (e) {
-      this._cache.promise = null;
-      console.error('[MongoDB] ERRORE di connessione a MongoDB:', e);
-      throw e;
-    }
-
-    return this._cache.conn;
+    
+    console.error('MongoDB: Tutti i tentativi di connessione falliti');
+    throw new Error(`Impossibile connettersi a MongoDB: ${error.message}`);
   }
-}
-
-// Funzione di connessione al database
-async function dbConnect(): Promise<typeof mongoose> {
-  const mongoConnection = MongoConnection.getInstance();
-  return mongoConnection.connect();
 }
 
 export default dbConnect; 
