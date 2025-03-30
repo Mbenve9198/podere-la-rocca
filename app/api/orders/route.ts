@@ -49,10 +49,20 @@ export async function POST(req: NextRequest) {
         notes: data.notes || '',
       });
       
+      // Debug - verifichiamo i dati del nuovo ordine prima del salvataggio
+      console.log('API /orders: Dati ordine prima del salvataggio:', {
+        customer: newOrder.customerName,
+        location: newOrder.location,
+        locationDetail: newOrder.locationDetail,
+        items: newOrder.items.length,
+        total: newOrder.total,
+        orderNumber: newOrder.orderNumber
+      });
+      
       // Salva l'ordine nel database
       console.log('API /orders: Tentativo di salvataggio ordine...');
       const savedOrder = await newOrder.save();
-      console.log(`API /orders: Ordine salvato con ID: ${savedOrder._id}`);
+      console.log(`API /orders: Ordine salvato con ID: ${savedOrder._id} e numero ordine: ${savedOrder.orderNumber}`);
       
       return NextResponse.json({
         success: true,

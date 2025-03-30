@@ -25,6 +25,16 @@ const OrderSchema = new Schema<IOrder>(
     orderNumber: {
       type: String,
       required: true,
+      default: function() {
+        // Genera un valore di default basato sul timestamp
+        // Questo valore sarà sovrascritto dal pre-hook di salvataggio
+        const today = new Date();
+        const dateStr = 
+          today.getFullYear().toString() +
+          (today.getMonth() + 1).toString().padStart(2, '0') +
+          today.getDate().toString().padStart(2, '0');
+        return `${dateStr}TMP${Date.now().toString().slice(-6)}`;
+      },
       unique: true,
     },
     customerName: {
