@@ -1,77 +1,119 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-
-// Mock data for analytics
-const mockData = {
-  revenue: {
-    today: 245.5,
-    week: 1876.0,
-    month: 7450.0,
-    year: 89400.0,
-    previousPeriod: {
-      today: 210.0,
-      week: 1650.0,
-      month: 6900.0,
-      year: 78500.0,
-    },
-  },
-  orders: {
-    today: 18,
-    week: 124,
-    month: 496,
-    year: 5950,
-    previousPeriod: {
-      today: 15,
-      week: 118,
-      month: 472,
-      year: 5600,
-    },
-  },
-  topProducts: [
-    { id: "aperol", name: "Aperol Spritz", count: 342, trend: 12 },
-    { id: "hugo", name: "Hugo", count: 287, trend: 8 },
-    { id: "insalatona-tonno", name: "Insalatona con tonno", count: 245, trend: -3 },
-    { id: "caffe", name: "Caffè", count: 198, trend: 5 },
-    { id: "coca-cola", name: "Coca Cola", count: 176, trend: -2 },
-  ],
-  topLocations: [
-    { id: "piscina", name: "Piscina", count: 456, trend: 15 },
-    { id: "camera", name: "Camera", count: 324, trend: 7 },
-    { id: "giardino", name: "Giardino", count: 198, trend: -5 },
-  ],
-}
+import { toast } from "react-hot-toast"
 
 type TimeFilter = "today" | "week" | "month" | "year"
 type ChartView = "revenue" | "orders" | "products" | "locations"
+
+interface SummaryData {
+  revenue: {
+    current: number;
+    previous: number;
+    change: number;
+  };
+  orders: {
+    current: number;
+    previous: number;
+    change: number;
+  };
+}
+
+interface TopItem {
+  id: string;
+  name: string;
+  count: number;
+  trend: number;
+}
 
 export default function AnalyticsDashboard() {
   const router = useRouter()
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("week")
   const [activeChart, setActiveChart] = useState<ChartView>("revenue")
+  const [loading, setLoading] = useState(true)
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null)
+  const [topProducts, setTopProducts] = useState<TopItem[]>([])
+  const [topLocations, setTopLocations] = useState<TopItem[]>([])
 
-  // Calculate percentage change
-  const calculateChange = (current: number, previous: number): number => {
-    if (previous === 0) return 100
-    return Math.round(((current - previous) / previous) * 100)
+  // Carica i dati iniziali
+  useEffect(() => {
+    fetchSummaryData(timeFilter)
+    fetchTopProducts(timeFilter)
+    fetchTopLocations(timeFilter)
+  }, [])
+
+  // Aggiorna i dati quando cambia il filtro temporale
+  useEffect(() => {
+    fetchSummaryData(timeFilter)
+    fetchTopProducts(timeFilter)
+    fetchTopLocations(timeFilter)
+  }, [timeFilter])
+
+  // Recupera i dati di riepilogo
+  const fetchSummaryData = async (period: TimeFilter) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/analytics/summary?period=${period}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setSummaryData(result.data)
+      } else {
+        console.error("Errore nel recupero dei dati di riepilogo:", result)
+        toast.error("Errore nel caricamento dei dati di riepilogo")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta dei dati di riepilogo:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Get revenue change percentage
-  const getRevenueChange = (): number => {
-    const current = mockData.revenue[timeFilter]
-    const previous = mockData.revenue.previousPeriod[timeFilter]
-    return calculateChange(current, previous)
+  // Recupera i prodotti più venduti
+  const fetchTopProducts = async (period: TimeFilter) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/analytics/top-products?period=${period}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setTopProducts(result.data)
+      } else {
+        console.error("Errore nel recupero dei prodotti più venduti:", result)
+        toast.error("Errore nel caricamento dei prodotti più venduti")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta dei prodotti più venduti:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Get orders change percentage
-  const getOrdersChange = (): number => {
-    const current = mockData.orders[timeFilter]
-    const previous = mockData.orders.previousPeriod[timeFilter]
-    return calculateChange(current, previous)
+  // Recupera le location più attive
+  const fetchTopLocations = async (period: TimeFilter) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/analytics/top-locations?period=${period}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setTopLocations(result.data)
+      } else {
+        console.error("Errore nel recupero delle location più attive:", result)
+        toast.error("Errore nel caricamento delle location più attive")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta delle location più attive:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Format currency
@@ -104,8 +146,19 @@ export default function AnalyticsDashboard() {
     )
   }
 
+  // Render spinner per caricamento
+  const renderSpinner = () => (
+    <div className="flex justify-center py-8">
+      <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )
+
   // Render chart based on active view
   const renderChart = () => {
+    if (loading) {
+      return renderSpinner()
+    }
+    
     switch (activeChart) {
       case "revenue":
         return renderRevenueChart()
@@ -120,12 +173,23 @@ export default function AnalyticsDashboard() {
 
   // Render revenue chart
   const renderRevenueChart = () => {
+    if (!summaryData) {
+      return <div className="text-center py-8 text-gray-500">Nessun dato disponibile</div>
+    }
+    
+    const revenueData = {
+      today: timeFilter === "today" ? summaryData.revenue.current : 0,
+      week: timeFilter === "week" ? summaryData.revenue.current : 0,
+      month: timeFilter === "month" ? summaryData.revenue.current : 0,
+      year: timeFilter === "year" ? summaryData.revenue.current : 0,
+    }
+    
     const maxValue = Math.max(
-      mockData.revenue.today,
-      mockData.revenue.week,
-      mockData.revenue.month,
-      mockData.revenue.year / 12,
-    )
+      revenueData.today,
+      revenueData.week,
+      revenueData.month,
+      revenueData.year / 12,
+    ) || 1 // Evita divisione per zero
 
     return (
       <div className="mt-4">
@@ -134,9 +198,11 @@ export default function AnalyticsDashboard() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <p className="text-sm text-gray-500">Totale</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(mockData.revenue[timeFilter])}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.revenue.current)}</p>
             </div>
-            <div className="bg-amber-50 px-3 py-1 rounded-full">{renderTrendIndicator(getRevenueChange())}</div>
+            <div className="bg-amber-50 px-3 py-1 rounded-full">
+              {renderTrendIndicator(summaryData.revenue.change)}
+            </div>
           </div>
 
           <div className="h-40 flex items-end space-x-2">
@@ -145,8 +211,9 @@ export default function AnalyticsDashboard() {
                 <div
                   className={`w-full rounded-t-md ${period === timeFilter ? "bg-amber-500" : "bg-amber-200"}`}
                   style={{
-                    height: `${(mockData.revenue[period as TimeFilter] / (period === "year" ? maxValue * 12 : maxValue)) * 100}%`,
+                    height: `${(revenueData[period as TimeFilter] / (period === "year" ? maxValue * 12 : maxValue)) * 100}%`,
                     maxHeight: "100%",
+                    minHeight: "4px" // Garantisce che le barre siano sempre visibili
                   }}
                 ></div>
                 <p className="text-xs mt-1 text-gray-500 capitalize">
@@ -162,12 +229,23 @@ export default function AnalyticsDashboard() {
 
   // Render orders chart
   const renderOrdersChart = () => {
+    if (!summaryData) {
+      return <div className="text-center py-8 text-gray-500">Nessun dato disponibile</div>
+    }
+    
+    const ordersData = {
+      today: timeFilter === "today" ? summaryData.orders.current : 0,
+      week: timeFilter === "week" ? summaryData.orders.current : 0,
+      month: timeFilter === "month" ? summaryData.orders.current : 0,
+      year: timeFilter === "year" ? summaryData.orders.current : 0,
+    }
+    
     const maxValue = Math.max(
-      mockData.orders.today,
-      mockData.orders.week / 7,
-      mockData.orders.month / 30,
-      mockData.orders.year / 365,
-    )
+      ordersData.today,
+      ordersData.week / 7,
+      ordersData.month / 30,
+      ordersData.year / 365,
+    ) || 1 // Evita divisione per zero
 
     return (
       <div className="mt-4">
@@ -176,26 +254,28 @@ export default function AnalyticsDashboard() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <p className="text-sm text-gray-500">Totale</p>
-              <p className="text-2xl font-bold text-gray-900">{mockData.orders[timeFilter]}</p>
+              <p className="text-2xl font-bold text-gray-900">{summaryData.orders.current}</p>
             </div>
-            <div className="bg-amber-50 px-3 py-1 rounded-full">{renderTrendIndicator(getOrdersChange())}</div>
+            <div className="bg-amber-50 px-3 py-1 rounded-full">
+              {renderTrendIndicator(summaryData.orders.change)}
+            </div>
           </div>
 
           <div className="h-40 flex items-end space-x-2">
             {["today", "week", "month", "year"].map((period) => {
-              let normalizedValue
+              let normalizedValue: number
               switch (period) {
                 case "today":
-                  normalizedValue = mockData.orders.today
+                  normalizedValue = ordersData.today
                   break
                 case "week":
-                  normalizedValue = mockData.orders.week / 7
+                  normalizedValue = ordersData.week / 7
                   break
                 case "month":
-                  normalizedValue = mockData.orders.month / 30
+                  normalizedValue = ordersData.month / 30
                   break
                 case "year":
-                  normalizedValue = mockData.orders.year / 365
+                  normalizedValue = ordersData.year / 365
                   break
                 default:
                   normalizedValue = 0
@@ -208,6 +288,7 @@ export default function AnalyticsDashboard() {
                     style={{
                       height: `${(normalizedValue / maxValue) * 100}%`,
                       maxHeight: "100%",
+                      minHeight: "4px" // Garantisce che le barre siano sempre visibili
                     }}
                   ></div>
                   <p className="text-xs mt-1 text-gray-500 capitalize">
@@ -224,13 +305,18 @@ export default function AnalyticsDashboard() {
 
   // Render products chart
   const renderProductsChart = () => {
+    if (topProducts.length === 0) {
+      return <div className="text-center py-8 text-gray-500">Nessun prodotto trovato</div>
+    }
+    
+    const maxCount = topProducts[0].count || 1 // Evita divisione per zero
+
     return (
       <div className="mt-4">
         <h2 className="text-lg font-medium text-gray-800 mb-3">Prodotti più venduti</h2>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="space-y-4">
-            {mockData.topProducts.map((product, index) => {
-              const maxCount = mockData.topProducts[0].count
+            {topProducts.map((product, index) => {
               const percentage = (product.count / maxCount) * 100
 
               return (
@@ -257,13 +343,18 @@ export default function AnalyticsDashboard() {
 
   // Render locations chart
   const renderLocationsChart = () => {
+    if (topLocations.length === 0) {
+      return <div className="text-center py-8 text-gray-500">Nessuna zona trovata</div>
+    }
+    
+    const maxCount = topLocations[0].count || 1 // Evita divisione per zero
+
     return (
       <div className="mt-4">
         <h2 className="text-lg font-medium text-gray-800 mb-3">Zone più attive</h2>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="space-y-4">
-            {mockData.topLocations.map((location, index) => {
-              const maxCount = mockData.topLocations[0].count
+            {topLocations.map((location, index) => {
               const percentage = (location.count / maxCount) * 100
 
               return (
@@ -316,8 +407,14 @@ export default function AnalyticsDashboard() {
                   <span className="text-2xl">💰</span>
                 </div>
                 <p className="text-xs text-gray-500">Fatturato</p>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(mockData.revenue[timeFilter])}</p>
-                <div className="mt-1">{renderTrendIndicator(getRevenueChange())}</div>
+                {loading || !summaryData ? (
+                  <div className="h-5 w-20 bg-gray-200 animate-pulse rounded mt-1 mb-2"></div>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-gray-900">{formatCurrency(summaryData.revenue.current)}</p>
+                    <div className="mt-1">{renderTrendIndicator(summaryData.revenue.change)}</div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -329,8 +426,14 @@ export default function AnalyticsDashboard() {
                   <span className="text-2xl">📦</span>
                 </div>
                 <p className="text-xs text-gray-500">Ordini</p>
-                <p className="text-lg font-bold text-gray-900">{mockData.orders[timeFilter]}</p>
-                <div className="mt-1">{renderTrendIndicator(getOrdersChange())}</div>
+                {loading || !summaryData ? (
+                  <div className="h-5 w-20 bg-gray-200 animate-pulse rounded mt-1 mb-2"></div>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-gray-900">{summaryData.orders.current}</p>
+                    <div className="mt-1">{renderTrendIndicator(summaryData.orders.change)}</div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
