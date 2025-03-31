@@ -46,6 +46,7 @@ interface ExperienceCardProps {
   className?: string
   showButton?: boolean
   motionEnabled?: boolean
+  onClickExperience?: (experienceId: string) => void
 }
 
 export function ExperienceCard({
@@ -54,7 +55,8 @@ export function ExperienceCard({
   variant = "default",
   className,
   showButton = true,
-  motionEnabled = true
+  motionEnabled = true,
+  onClickExperience
 }: ExperienceCardProps) {
   const isItalian = language === "it"
   const title = isItalian ? experience.titleIt : experience.titleEn
@@ -75,16 +77,25 @@ export function ExperienceCard({
   
   const Card = motionEnabled ? motion.div : "div"
   
+  // Handler per il click sulla card
+  const handleCardClick = () => {
+    if (onClickExperience) {
+      onClickExperience(experience.id)
+    }
+  }
+  
   // Componente banner orizzontale
   if (variant === "banner") {
     return (
       <Card 
         className={cn(
           "w-full flex overflow-hidden rounded-lg bg-amber-50 shadow-md",
+          onClickExperience ? "cursor-pointer" : "",
           className
         )}
         whileHover={motionEnabled ? { scale: 1.02 } : undefined}
         transition={{ duration: 0.3 }}
+        onClick={handleCardClick}
       >
         <div className="relative w-1/3 min-w-20 h-24">
           <Image 
@@ -117,10 +128,12 @@ export function ExperienceCard({
       <Card 
         className={cn(
           "overflow-hidden rounded-lg bg-white shadow",
+          onClickExperience ? "cursor-pointer" : "",
           className
         )}
         whileHover={motionEnabled ? { scale: 1.03 } : undefined}
         transition={{ duration: 0.3 }}
+        onClick={handleCardClick}
       >
         <div className="relative w-full aspect-square">
           <Image 
@@ -151,10 +164,12 @@ export function ExperienceCard({
     <Card 
       className={cn(
         "overflow-hidden rounded-xl bg-white shadow-md",
+        onClickExperience ? "cursor-pointer" : "",
         className
       )}
       whileHover={motionEnabled ? { scale: 1.03 } : undefined}
       transition={{ duration: 0.3 }}
+      onClick={handleCardClick}
     >
       <div className="relative w-full aspect-square">
         <Image 

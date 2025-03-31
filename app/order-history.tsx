@@ -24,9 +24,10 @@ type OrderHistoryProps = {
   language: string
   onNewOrder: () => void
   customerName: string
+  onClickExperience?: (experienceId: string) => void
 }
 
-export default function OrderHistory({ language, onNewOrder, customerName }: OrderHistoryProps) {
+export default function OrderHistory({ language, onNewOrder, customerName, onClickExperience }: OrderHistoryProps) {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -284,6 +285,7 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
             <ExperienceGrid
               language={language}
               className="mb-6"
+              onClickExperience={onClickExperience}
             />
           </div>
           

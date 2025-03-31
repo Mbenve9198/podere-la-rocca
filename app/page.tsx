@@ -17,6 +17,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen"
 import { ExperienceCarousel } from "@/components/ui/experience-carousel"
 import { ExperienceBanner } from "@/components/ui/experience-banner"
 import { ExperienceToast } from "@/components/ui/experience-toast"
+import { ExperienceDialog } from "@/components/ui/experience-dialog"
 
 type Order = {
   id: string
@@ -42,6 +43,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [showExperienceToast, setShowExperienceToast] = useState(false)
   const [toastRelatedCategory, setToastRelatedCategory] = useState<string | undefined>(undefined)
+  const [showExperienceDialog, setShowExperienceDialog] = useState(false)
+  const [selectedExperienceId, setSelectedExperienceId] = useState<string | undefined>(undefined)
 
   // Recupera il nome cliente dal localStorage al caricamento del componente
   useEffect(() => {
@@ -316,6 +319,12 @@ export default function Home() {
     setStep("menu-categories")
   }
 
+  // Funzione per aprire il dialog delle esperienze
+  const handleOpenExperienceDialog = (experienceId: string) => {
+    setSelectedExperienceId(experienceId)
+    setShowExperienceDialog(true)
+  }
+
   // Location selection step
   if (step === "location") {
     return (
@@ -417,6 +426,7 @@ export default function Home() {
           <ExperienceCarousel 
             language={language}
             className="w-full max-w-md"
+            onClickExperience={handleOpenExperienceDialog}
           />
         </main>
 
@@ -445,7 +455,7 @@ export default function Home() {
         />
         
         <main className="flex-1 flex flex-col items-center p-4 pt-20">
-          <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} />
+          <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} onClickExperience={handleOpenExperienceDialog} />
         </main>
 
         {showLanguageSelector && (
@@ -477,6 +487,7 @@ export default function Home() {
           <ExperienceBanner 
             language={language}
             className="mb-6 max-w-md"
+            onClickExperience={handleOpenExperienceDialog}
           />
           
           <MenuCategories language={language} onSelectCategory={handleSelectCategory} />
@@ -512,6 +523,7 @@ export default function Home() {
             language={language}
             category={selectedCategory}
             className="mb-6 max-w-md"
+            onClickExperience={handleOpenExperienceDialog}
           />
           
           <Menu
@@ -659,7 +671,7 @@ export default function Home() {
           </>
         )}
         {step === "order-history" && (
-          <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} />
+          <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} onClickExperience={handleOpenExperienceDialog} />
         )}
         {step === "menu-categories" && (
           <MenuCategories language={language} onSelectCategory={handleSelectCategory} />
@@ -705,6 +717,15 @@ export default function Home() {
         show={showExperienceToast}
         onClose={() => setShowExperienceToast(false)}
         relatedCategory={toastRelatedCategory}
+        onClickExperience={handleOpenExperienceDialog}
+      />
+      
+      {/* Dialog per i dettagli delle esperienze */}
+      <ExperienceDialog
+        isOpen={showExperienceDialog}
+        onClose={() => setShowExperienceDialog(false)}
+        initialExperienceId={selectedExperienceId}
+        language={language}
       />
     </div>
   )

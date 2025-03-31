@@ -4,6 +4,7 @@ interface ExperienceBannerProps {
   language: string
   category?: string
   className?: string
+  onClickExperience?: (experienceId: string) => void
 }
 
 // Mappa per collegare le categorie di menu alle esperienze pertinenti
@@ -24,7 +25,8 @@ const categoryToExperienceMap: Record<string, string> = {
 export function ExperienceBanner({
   language,
   category,
-  className
+  className,
+  onClickExperience
 }: ExperienceBannerProps) {
   // Se non c'è una categoria, scegliamo un'esperienza casuale
   let experienceId = category && categoryToExperienceMap[category]
@@ -39,6 +41,7 @@ export function ExperienceBanner({
       language={language}
       variant="banner"
       className={className}
+      onClickExperience={onClickExperience}
     />
   )
 } 

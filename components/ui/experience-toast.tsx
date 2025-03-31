@@ -10,6 +10,7 @@ interface ExperienceToastProps {
   relatedCategory?: string
   autoDismiss?: boolean
   dismissTime?: number
+  onClickExperience?: (experienceId: string) => void
 }
 
 export function ExperienceToast({

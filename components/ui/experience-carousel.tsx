@@ -9,13 +9,15 @@ interface ExperienceCarouselProps {
   className?: string
   autoPlay?: boolean
   interval?: number
+  onClickExperience?: (experienceId: string) => void
 }
 
 export function ExperienceCarousel({
   language,
   className,
   autoPlay = true,
-  interval = 5000
+  interval = 5000,
+  onClickExperience
 }: ExperienceCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -62,6 +64,7 @@ export function ExperienceCarousel({
                 language={language} 
                 className="rounded-none shadow-none"
                 motionEnabled={false}
+                onClickExperience={onClickExperience}
               />
             </div>
           ))}

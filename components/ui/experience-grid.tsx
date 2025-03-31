@@ -5,12 +5,14 @@ interface ExperienceGridProps {
   language: string
   className?: string
   title?: boolean
+  onClickExperience?: (experienceId: string) => void
 }
 
 export function ExperienceGrid({
   language,
   className,
-  title = true
+  title = true,
+  onClickExperience
 }: ExperienceGridProps) {
   const translations = {
     it: {
@@ -41,6 +43,7 @@ export function ExperienceGrid({
             experience={experience}
             language={language}
             variant="compact"
+            onClickExperience={onClickExperience}
           />
         ))}
       </div>
