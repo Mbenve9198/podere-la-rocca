@@ -107,7 +107,10 @@ export function ExperienceDialog({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
         >
           <motion.div
             className="relative w-full max-w-lg max-h-[90vh] bg-white rounded-xl overflow-hidden flex flex-col touch-auto"
@@ -115,11 +118,18 @@ export function ExperienceDialog({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
           >
             {/* Bottone di chiusura */}
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onClose();
+              }}
               className="absolute right-2 top-2 z-20 bg-black/50 text-white p-1 rounded-full"
               aria-label={t.close}
             >
@@ -141,8 +151,9 @@ export function ExperienceDialog({
               <button
                 className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white/90 p-2 rounded-full z-10"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  goToPrevious()
+                  e.stopPropagation();
+                  e.preventDefault();
+                  goToPrevious();
                 }}
                 aria-label={t.prev}
               >
@@ -152,8 +163,9 @@ export function ExperienceDialog({
               <button
                 className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white/90 p-2 rounded-full z-10"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  goToNext()
+                  e.stopPropagation();
+                  e.preventDefault();
+                  goToNext();
                 }}
                 aria-label={t.next}
               >
@@ -178,7 +190,11 @@ export function ExperienceDialog({
                     className={`h-2 rounded-full transition-all ${
                       idx === currentIndex ? "w-6 bg-amber-500" : "w-2 bg-amber-200"
                     }`}
-                    onClick={() => setCurrentExperienceId(exp.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setCurrentExperienceId(exp.id);
+                    }}
                     aria-label={`${isItalian ? exp.titleIt : exp.titleEn}`}
                   />
                 ))}
@@ -196,7 +212,11 @@ export function ExperienceDialog({
                       <button
                         key={exp.id}
                         className="snap-start flex-shrink-0 w-24 rounded-md overflow-hidden"
-                        onClick={() => setCurrentExperienceId(exp.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setCurrentExperienceId(exp.id);
+                        }}
                       >
                         <div className="relative w-24 h-24">
                           <Image

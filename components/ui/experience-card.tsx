@@ -78,9 +78,11 @@ export function ExperienceCard({
   const Card = motionEnabled ? motion.div : "div"
   
   // Handler per il click sulla card
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (onClickExperience) {
-      onClickExperience(experience.id)
+      e.preventDefault();
+      e.stopPropagation();
+      onClickExperience(experience.id);
     }
   }
   

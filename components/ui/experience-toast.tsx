@@ -19,7 +19,8 @@ export function ExperienceToast({
   onClose,
   relatedCategory,
   autoDismiss = true,
-  dismissTime = 7000 // 7 secondi
+  dismissTime = 7000, // 7 secondi
+  onClickExperience
 }: ExperienceToastProps) {
   const [visible, setVisible] = useState(show)
   
@@ -78,9 +79,10 @@ export function ExperienceToast({
         >
           <div className="relative rounded-lg overflow-hidden shadow-lg">
             <button
-              onClick={() => {
-                setVisible(false)
-                onClose()
+              onClick={(e) => {
+                e.stopPropagation();
+                setVisible(false);
+                onClose();
               }}
               className="absolute top-2 right-2 z-10 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
             >
@@ -92,6 +94,7 @@ export function ExperienceToast({
               language={language}
               variant="compact"
               className="w-72"
+              onClickExperience={onClickExperience}
             />
           </div>
         </motion.div>
