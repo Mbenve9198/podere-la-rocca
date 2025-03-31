@@ -42,4 +42,27 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    await dbConnect();
+    
+    // Recupera i dati dalla richiesta
+    const data = await req.json();
+    
+    // Crea una nuova categoria nel database
+    const newCategory = await Category.create(data);
+    
+    return NextResponse.json({
+      success: true,
+      data: newCategory,
+    }, { status: 201 });
+  } catch (error: any) {
+    console.error('Errore durante la creazione della categoria:', error);
+    return NextResponse.json(
+      { success: false, message: 'Errore durante la creazione della categoria' },
+      { status: 500 }
+    );
+  }
 } 

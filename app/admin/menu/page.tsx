@@ -1,133 +1,241 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import type { ICategory, IProduct } from "./types"
 import CategoryForm from "./category-form"
 import ProductForm from "./product-form"
-
-// Mock data for categories
-const mockCategories: ICategory[] = [
-  {
-    _id: "cat-001",
-    name: "cocktails",
-    translations: { it: "Cocktails", en: "Cocktails" },
-    order: 1,
-  },
-  {
-    _id: "cat-002",
-    name: "softDrinks",
-    translations: { it: "Bevande & Soft Drinks", en: "Drinks & Soft Drinks" },
-    order: 2,
-  },
-  {
-    _id: "cat-003",
-    name: "caffetteria",
-    translations: { it: "Caffetteria", en: "Coffee Bar" },
-    order: 3,
-  },
-  {
-    _id: "cat-004",
-    name: "lightLunch",
-    translations: { it: "Light Lunch", en: "Light Lunch" },
-    order: 4,
-  },
-]
-
-// Mock data for products
-const mockProducts: IProduct[] = [
-  {
-    _id: "prod-001",
-    name: "aperol",
-    price: 7,
-    category: "cat-001",
-    available: true,
-    translations: {
-      it: "Aperol Spritz",
-      en: "Aperol Spritz",
-      description: {
-        it: "Aperol, Prosecco, Soda",
-        en: "Aperol, Prosecco, Soda",
-      },
-    },
-  },
-  {
-    _id: "prod-002",
-    name: "hugo",
-    price: 7,
-    category: "cat-001",
-    available: true,
-    translations: {
-      it: "Hugo",
-      en: "Hugo",
-      description: {
-        it: "Prosecco, Sciroppo di Sambuco, Menta, Lime",
-        en: "Prosecco, Elderflower Syrup, Mint, Lime",
-      },
-    },
-  },
-  {
-    _id: "prod-003",
-    name: "coca-cola",
-    price: 3,
-    category: "cat-002",
-    available: true,
-    translations: { it: "Coca Cola", en: "Coca Cola" },
-  },
-  {
-    _id: "prod-004",
-    name: "caffe",
-    price: 2,
-    category: "cat-003",
-    available: true,
-    translations: { it: "Caffè", en: "Espresso" },
-  },
-  {
-    _id: "prod-005",
-    name: "cappuccino",
-    price: 3,
-    category: "cat-003",
-    available: true,
-    translations: { it: "Cappuccino", en: "Cappuccino" },
-  },
-  {
-    _id: "prod-006",
-    name: "insalatona-tonno",
-    price: 12,
-    category: "cat-004",
-    subcategory: "antipasti",
-    available: true,
-    translations: {
-      it: "Insalatona con tonno, pomodorini, lattuga e olive",
-      en: "Salad with tuna, cherry tomatoes, lettuce and olives",
-    },
-  },
-]
+import { toast } from "react-hot-toast"
 
 type View = "categories" | "products" | "editCategory" | "newCategory" | "editProduct" | "newProduct"
 
 export default function MenuManagement() {
   const router = useRouter()
   const [view, setView] = useState<View>("categories")
-  const [categories, setCategories] = useState<ICategory[]>(mockCategories)
-  const [products, setProducts] = useState<IProduct[]>(mockProducts)
+  const [categories, setCategories] = useState<ICategory[]>([])
+  const [products, setProducts] = useState<IProduct[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Filter products based on search term and category filter
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.translations.it.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.translations.en.toLowerCase().includes(searchTerm.toLowerCase())
+  // Carica le categorie dal database
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      const result = await response.json()
+      
+      if (result.success) {
+        setCategories(result.data)
+      } else {
+        console.error("Errore nel recupero delle categorie:", result)
+        toast.error("Errore nel caricamento delle categorie")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta delle categorie:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    const matchesCategory = filterCategory ? product.category === filterCategory : true
+  // Carica i prodotti dal database
+  const fetchProducts = async (categoryId?: string) => {
+    try {
+      const url = categoryId 
+        ? `/api/products?category=${categoryId}`
+        : '/api/products'
+        
+      const response = await fetch(url)
+      const result = await response.json()
+      
+      if (result.success) {
+        setProducts(result.data)
+      } else {
+        console.error("Errore nel recupero dei prodotti:", result)
+        toast.error("Errore nel caricamento dei prodotti")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta dei prodotti:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    return matchesSearch && matchesCategory
-  })
+  // Carica i dati all'avvio
+  useEffect(() => {
+    fetchCategories()
+    fetchProducts()
+  }, [])
+
+  // Ricarica i prodotti quando cambia il filtro di categoria
+  useEffect(() => {
+    if (filterCategory) {
+      fetchProducts(filterCategory)
+    } else {
+      fetchProducts()
+    }
+  }, [filterCategory])
+
+  // Crea o aggiorna una categoria
+  const saveCategory = async (category: ICategory) => {
+    try {
+      setLoading(true)
+      const isNew = !category._id
+      const method = isNew ? 'POST' : 'PUT'
+      const url = isNew ? '/api/categories' : `/api/categories/${category._id}`
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(category)
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success(isNew ? "Categoria creata con successo" : "Categoria aggiornata con successo")
+        fetchCategories()
+        setView("categories")
+      } else {
+        console.error("Errore nel salvataggio della categoria:", result)
+        toast.error(result.message || "Errore nel salvataggio della categoria")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta di salvataggio categoria:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Crea o aggiorna un prodotto
+  const saveProduct = async (product: IProduct) => {
+    try {
+      setLoading(true)
+      const isNew = !product._id
+      const method = isNew ? 'POST' : 'PUT'
+      const url = isNew ? '/api/products' : `/api/products/${product._id}`
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(product)
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success(isNew ? "Prodotto creato con successo" : "Prodotto aggiornato con successo")
+        fetchProducts(filterCategory || undefined)
+        setView("products")
+      } else {
+        console.error("Errore nel salvataggio del prodotto:", result)
+        toast.error(result.message || "Errore nel salvataggio del prodotto")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta di salvataggio prodotto:", error)
+      toast.error("Errore di connessione al server")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Elimina una categoria
+  const deleteCategory = async (categoryId: string) => {
+    if (confirm("Sei sicuro di voler eliminare questa categoria? Questa azione non può essere annullata.")) {
+      try {
+        setLoading(true)
+        
+        const response = await fetch(`/api/categories/${categoryId}`, {
+          method: 'DELETE'
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          toast.success("Categoria eliminata con successo")
+          fetchCategories()
+        } else {
+          console.error("Errore nell'eliminazione della categoria:", result)
+          toast.error(result.message || "Errore nell'eliminazione della categoria")
+        }
+      } catch (error) {
+        console.error("Errore nella richiesta di eliminazione categoria:", error)
+        toast.error("Errore di connessione al server")
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  // Elimina un prodotto
+  const deleteProduct = async (productId: string) => {
+    if (confirm("Sei sicuro di voler eliminare questo prodotto? Questa azione non può essere annullata.")) {
+      try {
+        setLoading(true)
+        
+        const response = await fetch(`/api/products/${productId}`, {
+          method: 'DELETE'
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          toast.success("Prodotto eliminato con successo")
+          fetchProducts(filterCategory || undefined)
+        } else {
+          console.error("Errore nell'eliminazione del prodotto:", result)
+          toast.error(result.message || "Errore nell'eliminazione del prodotto")
+        }
+      } catch (error) {
+        console.error("Errore nella richiesta di eliminazione prodotto:", error)
+        toast.error("Errore di connessione al server")
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  // Aggiorna disponibilità del prodotto
+  const toggleProductAvailability = async (productId: string, currentAvailability: boolean) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          available: !currentAvailability
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Aggiorna localmente lo stato
+        setProducts(products.map(p => 
+          p._id === productId ? { ...p, available: !p.available } : p
+        ))
+        
+        toast.success(`Prodotto ${!currentAvailability ? 'disponibile' : 'non disponibile'}`)
+      } else {
+        console.error("Errore nell'aggiornamento della disponibilità:", result)
+        toast.error(result.message || "Errore nell'aggiornamento della disponibilità")
+      }
+    } catch (error) {
+      console.error("Errore nella richiesta di aggiornamento disponibilità:", error)
+      toast.error("Errore di connessione al server")
+    }
+  }
 
   // Handle category selection for editing
   const handleEditCategory = (category: ICategory) => {
@@ -143,42 +251,27 @@ export default function MenuManagement() {
 
   // Handle category creation/update
   const handleSaveCategory = (category: ICategory) => {
-    if (view === "editCategory" && selectedCategory) {
-      // Update existing category
-      setCategories((prev) => prev.map((cat) => (cat._id === category._id ? category : cat)))
-    } else {
-      // Add new category
-      const newCategory = {
-        ...category,
-        _id: `cat-${Date.now()}`, // Generate a temporary ID
-      }
-      setCategories((prev) => [...prev, newCategory])
-    }
-    setView("categories")
+    saveCategory(category)
   }
 
   // Handle product creation/update
   const handleSaveProduct = (product: IProduct) => {
-    if (view === "editProduct" && selectedProduct) {
-      // Update existing product
-      setProducts((prev) => prev.map((prod) => (prod._id === product._id ? product : prod)))
-    } else {
-      // Add new product
-      const newProduct = {
-        ...product,
-        _id: `prod-${Date.now()}`, // Generate a temporary ID
-      }
-      setProducts((prev) => [...prev, newProduct])
-    }
-    setView("products")
+    saveProduct(product)
   }
 
   // Handle product availability toggle
-  const handleToggleAvailability = (productId: string) => {
-    setProducts((prev) =>
-      prev.map((product) => (product._id === productId ? { ...product, available: !product.available } : product)),
-    )
+  const handleToggleAvailability = (productId: string, currentAvailability: boolean) => {
+    toggleProductAvailability(productId, currentAvailability)
   }
+
+  // Filter products based on search term and category filter
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.translations.it.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.translations.en.toLowerCase().includes(searchTerm.toLowerCase())
+
+    return matchesSearch
+  })
 
   // Get category name by ID
   const getCategoryName = (categoryId: string): string => {
@@ -203,29 +296,47 @@ export default function MenuManagement() {
         </Button>
       </div>
 
-      <div className="space-y-3">
-        {categories.map((category) => (
-          <motion.div
-            key={category._id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
-          >
-            <div>
-              <h3 className="font-medium text-black">{category.translations.it}</h3>
-              <p className="text-sm text-gray-500">{category.translations.en}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-amber-500"
-              onClick={() => handleEditCategory(category)}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">Nessuna categoria trovata</div>
+      ) : (
+        <div className="space-y-3">
+          {categories.map((category) => (
+            <motion.div
+              key={category._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
             >
-              <span className="text-lg">✏️</span>
-            </Button>
-          </motion.div>
-        ))}
-      </div>
+              <div>
+                <h3 className="font-medium text-black">{category.translations.it}</h3>
+                <p className="text-sm text-gray-500">{category.translations.en}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-amber-500"
+                  onClick={() => handleEditCategory(category)}
+                >
+                  <span className="text-lg">✏️</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-red-500"
+                  onClick={() => deleteCategory(category._id)}
+                >
+                  <span className="text-lg">🗑️</span>
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   )
 
@@ -282,11 +393,15 @@ export default function MenuManagement() {
         ))}
       </div>
 
-      <div className="space-y-3">
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">Nessun prodotto trovato</div>
-        ) : (
-          filteredProducts.map((product) => (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">Nessun prodotto trovato</div>
+      ) : (
+        <div className="space-y-3">
+          {filteredProducts.map((product) => (
             <motion.div
               key={product._id}
               initial={{ opacity: 0, y: 10 }}
@@ -297,6 +412,9 @@ export default function MenuManagement() {
                 <div>
                   <h3 className="font-medium text-black">{product.translations.it}</h3>
                   <p className="text-sm text-gray-500">{product.translations.en}</p>
+                  {product.translations.description && (
+                    <p className="text-xs text-gray-500 mt-1">{product.translations.description.it}</p>
+                  )}
                 </div>
                 <div className="flex items-center">
                   <Button
@@ -310,8 +428,16 @@ export default function MenuManagement() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="text-gray-500 hover:text-red-500 mr-1"
+                    onClick={() => deleteProduct(product._id)}
+                  >
+                    <span className="text-lg">🗑️</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className={product.available ? "text-green-500" : "text-gray-400"}
-                    onClick={() => handleToggleAvailability(product._id)}
+                    onClick={() => handleToggleAvailability(product._id, product.available)}
                   >
                     {product.available ? <span className="text-xl">🟢</span> : <span className="text-xl">⚪</span>}
                   </Button>
@@ -322,9 +448,9 @@ export default function MenuManagement() {
                 <span className="font-bold text-amber-600">€{product.price.toFixed(2)}</span>
               </div>
             </motion.div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 

@@ -67,4 +67,42 @@ export async function GET(request: NextRequest) {
       error: "Errore durante il recupero dei prodotti" 
     }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  console.log('[API Products] Inizio richiesta POST /api/products');
+  
+  try {
+    // Connessione al database
+    console.log('[API Products] Tentativo di connessione al database...');
+    await dbConnect();
+    console.log('[API Products] Connessione al database riuscita');
+    
+    // Recupera i dati dal corpo della richiesta
+    const data = await request.json();
+    console.log('[API Products] Dati ricevuti per il nuovo prodotto:', data);
+    
+    // Crea un nuovo prodotto
+    const newProduct = await Product.create(data);
+    console.log('[API Products] Nuovo prodotto creato con ID:', newProduct._id);
+    
+    // Restituisce il nuovo prodotto come risposta JSON
+    return NextResponse.json({ 
+      success: true, 
+      data: newProduct 
+    }, { status: 201 });
+  } catch (error: any) {
+    console.error("[API Products] ERRORE durante la creazione del prodotto:", error);
+    console.error('[API Products] Dettaglio errore:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    
+    return NextResponse.json({ 
+      success: false, 
+      error: "Errore durante la creazione del prodotto" 
+    }, { status: 500 });
+  }
 } 
