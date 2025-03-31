@@ -23,6 +23,7 @@ export default function AdminLogin() {
     setError(null)
 
     try {
+      console.log('Front-end: Tentativo di login admin')
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: {
@@ -32,14 +33,20 @@ export default function AdminLogin() {
       })
 
       const data = await response.json()
+      console.log('Front-end: Risposta login ricevuta', { success: data.success })
 
       if (!response.ok) {
         throw new Error(data.message || "Errore durante il login")
       }
 
-      // Reindirizza alla pagina originale o alla dashboard
-      router.push(redirectTo)
+      // Mostra un messaggio di successo
+      console.log('Front-end: Login riuscito, redirezione a:', redirectTo)
+      
+      // Usa window.location invece di router.push per forzare un refresh completo
+      // Questo assicura che i cookie vengano valutati dal middleware
+      window.location.href = redirectTo
     } catch (err: any) {
+      console.error('Front-end: Errore di login:', err.message)
       setError(err.message || "Si è verificato un errore durante il login")
     } finally {
       setIsLoading(false)

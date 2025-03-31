@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 import dbConnect from "@/lib/mongodb"
 import Admin from "@/models/Admin"
-import { setCookie } from "@/lib/cookies"
 
 // Chiave segreta per firmare i token JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'podere-la-rocca-secret-key'
@@ -11,6 +10,7 @@ const TOKEN_EXPIRY = 60 * 60 * 24 * 7
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('API: Ricevuta richiesta login admin')
     const { username, password } = await req.json()
 
     // Validazione dei dati
@@ -46,17 +46,10 @@ export async function POST(req: NextRequest) {
       { expiresIn: TOKEN_EXPIRY }
     )
 
-    // Imposta il cookie con il token JWT
-    setCookie('admin_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: TOKEN_EXPIRY,
-      path: '/',
-      sameSite: 'strict',
-    })
+    console.log('API: Token JWT creato con successo')
 
-    // Ritorna una risposta di successo
-    return NextResponse.json({
+    // Creazione della risposta
+    const response = NextResponse.json({
       success: true,
       message: "Login effettuato con successo",
       user: {
@@ -66,6 +59,20 @@ export async function POST(req: NextRequest) {
         role: admin.role,
       },
     })
+
+    // Imposta il cookie direttamente sulla risposta
+    response.cookies.set({
+      name: 'admin_token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: TOKEN_EXPIRY,
+      path: '/',
+      sameSite: 'strict',
+    })
+
+    console.log('API: Cookie admin_token impostato')
+    return response
   } catch (error: any) {
     console.error("Errore durante il login:", error)
     return NextResponse.json(
