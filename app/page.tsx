@@ -111,8 +111,8 @@ export default function Home() {
   const Header = ({ 
     showBackButton = false, 
     onBackClick = () => {}, 
-    showOrdersButton = false,
-    hideLanguageButton = false
+    hideLanguageButton = false,
+    hideOrdersButton = false  // Aggiungo questo parametro invece di showOrdersButton
   }) => {
     const c = commonTrans[language as keyof typeof commonTrans];
     
@@ -131,7 +131,7 @@ export default function Home() {
         </div>
         
         <div className="flex items-center space-x-2">
-          {showOrdersButton && (
+          {!hideOrdersButton && step !== "order-history" && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -283,7 +283,7 @@ export default function Home() {
   if (step === "location") {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
-        <Header hideLanguageButton={false} />
+        <Header hideLanguageButton={false} hideOrdersButton={false} />
         
         <main className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
           <h2 className="text-xl font-playful text-black mb-8 text-center uppercase tracking-tight">
@@ -319,8 +319,7 @@ export default function Home() {
     return (
       <div className="flex flex-col min-h-screen bg-amber-100">
         <Header 
-          showOrdersButton={orders.length > 0} 
-          hideLanguageButton={false}
+          hideOrdersButton={false}
         />
         
         <main className="flex-1 flex flex-col items-center justify-center p-6 pt-20">
@@ -426,7 +425,6 @@ export default function Home() {
         <Header 
           showBackButton={true} 
           onBackClick={() => setStep(orders.length > 0 ? "order-history" : "user-info")} 
-          showOrdersButton={true}
           hideLanguageButton={false}
         />
         
@@ -455,7 +453,6 @@ export default function Home() {
         <Header 
           showBackButton={true} 
           onBackClick={handleBackFromMenu} 
-          showOrdersButton={true}
           hideLanguageButton={false}
         />
         
@@ -489,7 +486,6 @@ export default function Home() {
         <Header 
           showBackButton={true} 
           onBackClick={handleBackFromSummary} 
-          showOrdersButton={true}
           hideLanguageButton={false}
         />
         
@@ -529,7 +525,7 @@ export default function Home() {
       <Header 
         showBackButton={true} 
         onBackClick={() => setStep(orders.length > 0 ? "order-history" : "user-info")} 
-        showOrdersButton={true}
+        hideOrdersButton={step === "order-history"}
         hideLanguageButton={false}
       />
       

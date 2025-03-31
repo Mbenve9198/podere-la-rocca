@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, Clock, RotateCw, RefreshCw } from "lucide-react"
+import { CheckCircle, Clock, RotateCw, RefreshCw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { it, enUS } from "date-fns/locale"
 import { LoadingScreen } from "@/components/ui/loading-screen"
+import { Input } from "@/components/ui/input"
 
 type Order = {
   id: string
@@ -29,6 +30,8 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+  const [searchName, setSearchName] = useState<string>(customerName || "")
+  const [isSearching, setIsSearching] = useState<boolean>(false)
 
   const translations = {
     it: {
@@ -45,7 +48,12 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       loading: "Caricamento ordini...",
       error: "Errore nel caricamento degli ordini",
       refreshing: "Aggiornamento in corso...",
-      refresh: "Aggiorna"
+      refresh: "Aggiorna",
+      searchOrders: "Cerca i tuoi ordini precedenti",
+      searchNameLabel: "Nome e Cognome",
+      searchButton: "Cerca",
+      searchNamePlaceholder: "Inserisci il tuo nome e cognome",
+      searchingOrders: "Ricerca ordini in corso..."
     },
     en: {
       title: "Your orders",
@@ -61,20 +69,26 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       loading: "Loading orders...",
       error: "Error loading orders",
       refreshing: "Refreshing...",
-      refresh: "Refresh"
+      refresh: "Refresh",
+      searchOrders: "Search your previous orders",
+      searchNameLabel: "Full Name",
+      searchButton: "Search",
+      searchNamePlaceholder: "Enter your full name",
+      searchingOrders: "Searching orders..."
     },
   }
 
   const t = translations[language as keyof typeof translations]
 
   // Funzione per caricare gli ordini dal database
-  const fetchOrders = async () => {
+  const fetchOrders = async (nameToSearch: string = customerName) => {
     try {
+      setIsSearching(false);
       setIsRefreshing(true);
       setError(null);
       
       // In futuro qui possiamo aggiungere un parametro per filtrare gli ordini per cliente
-      const response = await fetch(`/api/orders?customerName=${encodeURIComponent(customerName)}`);
+      const response = await fetch(`/api/orders?customerName=${encodeURIComponent(nameToSearch)}`);
       
       if (!response.ok) {
         throw new Error('Errore nel recupero degli ordini');
@@ -109,6 +123,7 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      setIsSearching(false);
     }
   };
 
@@ -121,6 +136,14 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
   // Funzione per aggiornare manualmente gli ordini
   const handleRefresh = () => {
     fetchOrders();
+  };
+
+  // Funzione per cercare ordini con un nome diverso
+  const handleSearch = () => {
+    if (searchName.trim()) {
+      setIsSearching(true);
+      fetchOrders(searchName.trim());
+    }
   };
 
   // Get status icon based on order status
@@ -188,9 +211,9 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
   }
 
   // Visualizza un messaggio di caricamento
-  if (isLoading) {
+  if (isLoading || isSearching) {
     return (
-      <LoadingScreen text={t.loading} />
+      <LoadingScreen text={isSearching ? t.searchingOrders : t.loading} />
     );
   }
 
@@ -226,11 +249,40 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
       </div>
 
       {orders.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-500 mb-6">{t.noOrders}</p>
-          <Button className="bg-amber-500 hover:bg-amber-600 text-white font-medium" onClick={onNewOrder}>
-            {t.newOrder}
-          </Button>
+        <div className="bg-white rounded-lg shadow p-6">
+          <p className="text-gray-500 mb-6 text-center">{t.noOrders}</p>
+          
+          {/* Form di ricerca ordini */}
+          <div className="mb-6 border-t border-gray-200 pt-6">
+            <h3 className="text-md font-medium text-gray-700 mb-4 text-center">{t.searchOrders}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t.searchNameLabel}
+                </label>
+                <Input
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  placeholder={t.searchNamePlaceholder}
+                  className="w-full border-amber-200 focus:border-amber-500"
+                />
+              </div>
+              <Button 
+                onClick={handleSearch} 
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                disabled={!searchName.trim() || isRefreshing}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                {t.searchButton}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <Button className="bg-amber-500 hover:bg-amber-600 text-white font-medium" onClick={onNewOrder}>
+              {t.newOrder}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
