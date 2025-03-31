@@ -14,6 +14,9 @@ import OrderHistory from "./order-history"
 import { v4 as uuidv4 } from "uuid"
 import Image from "next/image"
 import { LoadingScreen } from "@/components/ui/loading-screen"
+import { ExperienceCarousel } from "@/components/ui/experience-carousel"
+import { ExperienceBanner } from "@/components/ui/experience-banner"
+import { ExperienceToast } from "@/components/ui/experience-toast"
 
 type Order = {
   id: string
@@ -37,6 +40,8 @@ export default function Home() {
   const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showExperienceToast, setShowExperienceToast] = useState(false)
+  const [toastRelatedCategory, setToastRelatedCategory] = useState<string | undefined>(undefined)
 
   // Recupera il nome cliente dal localStorage al caricamento del componente
   useEffect(() => {
@@ -259,9 +264,41 @@ export default function Home() {
           locationDetail,
         };
         
+        // Imposta la categoria correlata per il toast in base agli elementi nel carrello
+        // Trova la categoria più comune negli articoli del carrello
+        const categoryCounts: Record<string, number> = {};
+        cart.forEach(item => {
+          if (item.id.startsWith("67e9424db092d6d1d2ff8524")) {
+            categoryCounts["67e9424db092d6d1d2ff8524"] = (categoryCounts["67e9424db092d6d1d2ff8524"] || 0) + 1;
+          } else if (item.id.startsWith("67e9424db092d6d1d2ff8525")) {
+            categoryCounts["67e9424db092d6d1d2ff8525"] = (categoryCounts["67e9424db092d6d1d2ff8525"] || 0) + 1;
+          } else if (item.id.startsWith("67e9424db092d6d1d2ff8526")) {
+            categoryCounts["67e9424db092d6d1d2ff8526"] = (categoryCounts["67e9424db092d6d1d2ff8526"] || 0) + 1;
+          } else if (item.id.startsWith("67e9424db092d6d1d2ff8527")) {
+            categoryCounts["67e9424db092d6d1d2ff8527"] = (categoryCounts["67e9424db092d6d1d2ff8527"] || 0) + 1;
+          }
+        });
+        
+        let mostCommonCategory: string | undefined;
+        let maxCount = 0;
+        
+        Object.entries(categoryCounts).forEach(([category, count]) => {
+          if (count > maxCount) {
+            mostCommonCategory = category;
+            maxCount = count;
+          }
+        });
+        
+        setToastRelatedCategory(mostCommonCategory);
+        
         setOrders([newOrder, ...orders]);
         setCart([]);
         setStep("order-history");
+        
+        // Mostra il toast dopo un breve ritardo
+        setTimeout(() => {
+          setShowExperienceToast(true);
+        }, 1000);
       } else {
         console.error('Errore dal server:', result);
         // Qui potresti mostrare un messaggio di errore all'utente
@@ -320,9 +357,16 @@ export default function Home() {
       <div className="flex flex-col min-h-screen bg-amber-100">
         <Header 
           hideOrdersButton={false}
+          hideLanguageButton={false}
         />
         
-        <main className="flex-1 flex flex-col items-center justify-center p-6 pt-20">
+        <main className="flex-1 flex flex-col items-center p-6 pt-20">
+          {/* Carosello delle esperienze */}
+          <ExperienceCarousel 
+            language={language}
+            className="mb-8 w-full max-w-md"
+          />
+          
           <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-playful text-black mb-4 uppercase tracking-tight">{t.subtitle}</h2>
 
@@ -428,7 +472,13 @@ export default function Home() {
           hideLanguageButton={false}
         />
         
-        <main className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
+        <main className="flex-1 flex flex-col items-center p-4 pt-20">
+          {/* Banner con esperienze */}
+          <ExperienceBanner 
+            language={language}
+            className="mb-6 max-w-md"
+          />
+          
           <MenuCategories language={language} onSelectCategory={handleSelectCategory} />
         </main>
 
@@ -457,6 +507,13 @@ export default function Home() {
         />
         
         <main className="flex-1 flex flex-col items-center p-4 pt-20">
+          {/* Banner con esperienze correlate alla categoria */}
+          <ExperienceBanner 
+            language={language}
+            category={selectedCategory}
+            className="mb-6 max-w-md"
+          />
+          
           <Menu
             language={language}
             category={selectedCategory}
@@ -641,6 +698,14 @@ export default function Home() {
           onClose={() => setShowLanguageSelector(false)}
         />
       )}
+      
+      {/* Toast con proposta di esperienze correlate */}
+      <ExperienceToast
+        language={language}
+        show={showExperienceToast}
+        onClose={() => setShowExperienceToast(false)}
+        relatedCategory={toastRelatedCategory}
+      />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { it, enUS } from "date-fns/locale"
 import { LoadingScreen } from "@/components/ui/loading-screen"
 import { Input } from "@/components/ui/input"
+import { ExperienceGrid } from "@/components/ui/experience-grid"
 
 type Order = {
   id: string
@@ -276,6 +277,14 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
                 {t.searchButton}
               </Button>
             </div>
+          </div>
+          
+          {/* Esperienze offerte */}
+          <div className="mb-6 border-t border-gray-200 pt-6">
+            <ExperienceGrid
+              language={language}
+              className="mb-6"
+            />
           </div>
           
           <div className="text-center">
