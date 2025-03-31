@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
-import { authMiddleware } from '@/middleware/authMiddleware';
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Verifica l'autenticazione
-  const authResponse = await authMiddleware(req);
-  if (authResponse.status === 401) {
-    return authResponse;
-  }
-
   try {
     await dbConnect();
     

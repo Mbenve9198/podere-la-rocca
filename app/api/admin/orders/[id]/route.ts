@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
-import { authMiddleware } from '@/middleware/authMiddleware';
 
 interface Params {
   params: {
@@ -11,12 +10,6 @@ interface Params {
 
 // Ottieni un ordine specifico
 export async function GET(req: NextRequest, { params }: Params) {
-  // Verifica l'autenticazione
-  const authResponse = await authMiddleware(req);
-  if (authResponse.status === 401) {
-    return authResponse;
-  }
-
   try {
     await dbConnect();
     
@@ -53,12 +46,6 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 // Aggiorna un ordine
 export async function PATCH(req: NextRequest, { params }: Params) {
-  // Verifica l'autenticazione
-  const authResponse = await authMiddleware(req);
-  if (authResponse.status === 401) {
-    return authResponse;
-  }
-
   try {
     await dbConnect();
     
