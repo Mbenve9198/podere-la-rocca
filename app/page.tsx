@@ -162,11 +162,20 @@ export default function Home() {
       // Aggiungi qui tutte le altre categorie se necessario
     };
     
+    // Mostra l'indicatore di caricamento
+    setIsLoading(true);
+    
     // Converti il nome della categoria nell'ID corrispondente
     const categoryId = categoryIdMap[category] || category;
     
     setSelectedCategory(categoryId);
     setStep("menu");
+    
+    // Nascondi l'indicatore di caricamento dopo un breve ritardo
+    // per assicurarsi che il componente Menu abbia il tempo di mostrare la propria animazione
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
   }
 
   const handleBackFromMenu = () => {
