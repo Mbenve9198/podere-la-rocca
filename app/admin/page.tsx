@@ -41,6 +41,21 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
+  // Funzione per ottenere gli headers con l'autorizzazione se disponibile
+  const getAuthHeaders = () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Aggiungi il token dal localStorage se disponibile
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
   // Funzione per recuperare gli ordini dal backend
   const fetchOrders = async () => {
     try {
@@ -53,7 +68,10 @@ export default function AdminDashboard() {
         url += `?status=${statusFilter}`
       }
       
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+        credentials: 'include' // Includi i cookie se disponibili
+      })
       
       if (!response.ok) {
         throw new Error(`Errore nella richiesta: ${response.status}`)
@@ -113,10 +131,9 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ status: newStatus })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status: newStatus }),
+        credentials: 'include'
       })
       
       if (!response.ok) {

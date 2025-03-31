@@ -30,6 +30,8 @@ export default function AdminLogin() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
+        // Assicuriamoci che i cookie vengano inviati e ricevuti
+        credentials: "include"
       })
 
       const data = await response.json()
@@ -39,6 +41,15 @@ export default function AdminLogin() {
         throw new Error(data.message || "Errore durante il login")
       }
 
+      console.log('Front-end: Login riuscito, salvando token nel localStorage')
+      
+      // Salva il token nel localStorage per autenticazione alternativa
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token)
+        localStorage.setItem('admin_user', JSON.stringify(data.user))
+        console.log('Front-end: Token salvato nel localStorage')
+      }
+      
       // Mostra un messaggio di successo
       console.log('Front-end: Login riuscito, redirezione a:', redirectTo)
       

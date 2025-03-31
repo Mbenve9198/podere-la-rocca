@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'podere-la-rocca-secret-key';
@@ -18,9 +17,15 @@ export async function authMiddleware(
 ) {
   console.log('AuthMiddleware: Verifica autenticazione, required:', config.required);
   
-  // NOTA: Per un approccio più affidabile, meglio usare i cookie dalla req invece di cookies()
-  // che è specifico per le API Routes Server-Side
-  const token = req.cookies.get('admin_token')?.value;
+  // Ottieni il token dal cookie oppure dall'header Authorization
+  let token = req.cookies.get('admin_token')?.value;
+  const authHeader = req.headers.get('Authorization');
+  
+  if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+    console.log('AuthMiddleware: Token recuperato dall\'header Authorization');
+  }
+  
   console.log('AuthMiddleware: Token presente:', !!token);
   
   // Se il token non esiste e l'autenticazione è richiesta
@@ -38,7 +43,7 @@ export async function authMiddleware(
       console.log('AuthMiddleware: Verifica token');
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('AuthMiddleware: Token valido, autenticazione riuscita');
+        console.log('AuthMiddleware: Token valido, autenticazione riuscita', decoded);
         // Aggiungi i dati dell'admin alla richiesta
         return NextResponse.next();
       } catch (jwtError) {
@@ -75,10 +80,19 @@ export async function authMiddleware(
 }
 
 /**
- * Estrae le informazioni dell'admin dal token JWT nei cookie
+ * Estrae le informazioni dell'admin dal token JWT nei cookie o header
  */
 export function getAdminFromRequest(req: NextRequest) {
-  const token = req.cookies.get('admin_token')?.value;
+  // Prova a ottenere il token dal cookie
+  let token = req.cookies.get('admin_token')?.value;
+  
+  // Se non c'è nel cookie, controlla l'header Authorization
+  if (!token) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
 
   if (!token) {
     return null;

@@ -8,12 +8,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'podere-la-rocca-secret-key';
 
 export async function GET(req: NextRequest) {
   try {
-    // Recupera il token dal cookie
+    console.log('API /me: Ricevuta richiesta')
+    
+    // Prova a ottenere il token dal cookie
     const cookieStore = cookies();
-    const token = cookieStore.get('admin_token')?.value;
+    let token = cookieStore.get('admin_token')?.value;
+
+    // Se non c'è un token nei cookie, controlla l'header Authorization
+    const authHeader = req.headers.get('Authorization');
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+      console.log('API /me: Token recuperato dall\'header Authorization')
+    }
 
     // Se il token non esiste, l'utente non è autenticato
     if (!token) {
+      console.log('API /me: Nessun token trovato')
       return NextResponse.json(
         { success: false, message: 'Utente non autenticato' },
         { status: 401 }
@@ -23,6 +33,7 @@ export async function GET(req: NextRequest) {
     try {
       // Verifica il token
       const decoded = jwt.verify(token, JWT_SECRET) as { id: string; username: string; role: string };
+      console.log('API /me: Token JWT valido', { id: decoded.id, username: decoded.username })
       
       // Connessione al database
       await dbConnect();
@@ -31,11 +42,14 @@ export async function GET(req: NextRequest) {
       const admin = await Admin.findById(decoded.id).select('-password');
       
       if (!admin) {
+        console.log('API /me: Admin non trovato nel database')
         return NextResponse.json(
           { success: false, message: 'Utente non trovato' },
           { status: 401 }
         );
       }
+      
+      console.log('API /me: Admin trovato, autenticazione riuscita')
       
       // Restituisci le informazioni dell'admin
       return NextResponse.json({
@@ -49,13 +63,14 @@ export async function GET(req: NextRequest) {
       });
     } catch (error) {
       // Token non valido o scaduto
+      console.error('API /me: Token non valido o scaduto', error)
       return NextResponse.json(
         { success: false, message: 'Token non valido o scaduto' },
         { status: 401 }
       );
     }
   } catch (error: any) {
-    console.error('Errore durante la verifica dell\'autenticazione:', error);
+    console.error('API /me: Errore durante la verifica dell\'autenticazione:', error);
     return NextResponse.json(
       { success: false, message: 'Errore interno del server' },
       { status: 500 }

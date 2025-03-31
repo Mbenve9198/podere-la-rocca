@@ -58,9 +58,11 @@ export async function POST(req: NextRequest) {
         name: admin.name,
         role: admin.role,
       },
+      // Includi il token nella risposta JSON
+      token: token
     })
 
-    // Imposta il cookie direttamente sulla risposta
+    // Imposta il cookie con opzioni meno restrittive
     response.cookies.set({
       name: 'admin_token',
       value: token,
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: TOKEN_EXPIRY,
       path: '/',
-      sameSite: 'strict',
+      sameSite: 'lax', // Cambiato da 'strict' a 'lax' per essere più permissivo
     })
 
     console.log('API: Cookie admin_token impostato')
