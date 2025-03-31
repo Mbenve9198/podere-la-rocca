@@ -8,6 +8,7 @@ import AdminListView from "./list-view"
 import AdminCardView from "./card-view"
 import AdminOrderDetail from "./order-detail"
 import { useRouter } from "next/navigation"
+import toast, { Toaster } from "react-hot-toast"
 
 // Definisco il tipo Order corrispondente al modello del database
 type OrderItem = {
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [updatingOrderIds, setUpdatingOrderIds] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
@@ -120,6 +122,9 @@ export default function AdminDashboard() {
   // Aggiorna lo stato di un ordine
   const updateOrderStatus = async (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => {
     try {
+      // Aggiungi l'ID dell'ordine all'array degli ordini in fase di aggiornamento
+      setUpdatingOrderIds(prev => [...prev, orderId])
+      
       const response = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: "PUT",
         headers: getAuthHeaders(),
@@ -142,13 +147,52 @@ export default function AdminDashboard() {
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus })
         }
+        
+        // Mostra notifica di successo
+        const statusMessages = {
+          waiting: "Ordine messo in attesa",
+          processing: "Ordine in lavorazione",
+          completed: "Ordine completato con successo",
+          cancelled: "Ordine annullato"
+        }
+        toast.success(statusMessages[newStatus], {
+          duration: 2000,
+          position: "bottom-center",
+          style: {
+            background: '#FFFAEB',
+            color: '#B45309',
+            border: '1px solid #FCD34D',
+          },
+          icon: getStatusIcon(newStatus),
+        })
       } else {
         console.error("Errore nell'aggiornamento dello stato:", data.message)
+        toast.error(data.message || "Errore nell'aggiornamento dello stato dell'ordine")
         setError(data.message || "Errore nell'aggiornamento dello stato dell'ordine")
       }
     } catch (err: any) {
       console.error("Errore durante l'aggiornamento dello stato dell'ordine:", err)
+      toast.error(err.message || "Si è verificato un errore durante l'aggiornamento dello stato")
       setError(err.message || "Si è verificato un errore durante l'aggiornamento dello stato")
+    } finally {
+      // Rimuovi l'ID dell'ordine dall'array degli ordini in fase di aggiornamento
+      setUpdatingOrderIds(prev => prev.filter(id => id !== orderId))
+    }
+  }
+
+  // Ottieni l'icona dello stato
+  const getStatusIcon = (status: string): string => {
+    switch (status) {
+      case "waiting":
+        return "⏳";
+      case "processing":
+        return "🔄";
+      case "completed":
+        return "✅";
+      case "cancelled":
+        return "❌";
+      default:
+        return "🔔";
     }
   }
 
@@ -198,7 +242,13 @@ export default function AdminDashboard() {
   if (selectedOrder) {
     return (
       <>
-        <AdminOrderDetail order={selectedOrder} onClose={closeOrderDetails} onUpdateStatus={updateOrderStatus} />
+        <Toaster />
+        <AdminOrderDetail 
+          order={selectedOrder} 
+          onClose={closeOrderDetails} 
+          onUpdateStatus={updateOrderStatus} 
+          updatingOrderIds={updatingOrderIds}
+        />
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
@@ -232,6 +282,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-amber-50 pb-16">
+      <Toaster />
       {/* Large tabs for view switching */}
       <div className="p-4 bg-white border-b border-gray-200">
         <div className="grid grid-cols-2 gap-2">
@@ -309,9 +360,19 @@ export default function AdminDashboard() {
             </motion.div>
           </div>
         ) : viewMode === "list" ? (
-          <AdminListView orders={filteredOrders} onViewDetails={viewOrderDetails} onUpdateStatus={updateOrderStatus} />
+          <AdminListView 
+            orders={filteredOrders} 
+            onViewDetails={viewOrderDetails} 
+            onUpdateStatus={updateOrderStatus} 
+            updatingOrderIds={updatingOrderIds}
+          />
         ) : (
-          <AdminCardView orders={filteredOrders} onViewDetails={viewOrderDetails} onUpdateStatus={updateOrderStatus} />
+          <AdminCardView 
+            orders={filteredOrders} 
+            onViewDetails={viewOrderDetails} 
+            onUpdateStatus={updateOrderStatus}
+            updatingOrderIds={updatingOrderIds} 
+          />
         )}
       </main>
 

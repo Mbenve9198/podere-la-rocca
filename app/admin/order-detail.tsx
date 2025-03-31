@@ -18,9 +18,10 @@ type AdminOrderDetailProps = {
   order: Order
   onClose: () => void
   onUpdateStatus: (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => void
+  updatingOrderIds: string[]
 }
 
-export default function AdminOrderDetail({ order, onClose, onUpdateStatus }: AdminOrderDetailProps) {
+export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updatingOrderIds }: AdminOrderDetailProps) {
   // Format timestamp to readable date and time
   const formatDateTime = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -92,6 +93,8 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus }: Adm
 
   // Get action buttons based on status
   const getActionButtons = () => {
+    const isUpdating = updatingOrderIds.includes(order.id);
+    
     switch (order.status) {
       case "waiting":
         return (
@@ -99,16 +102,34 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus }: Adm
             <Button
               className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
               onClick={() => onUpdateStatus(order.id, "processing")}
+              disabled={isUpdating}
             >
-              Avvia preparazione
+              {isUpdating ? (
+                <>
+                  <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                  Aggiornamento...
+                </>
+              ) : (
+                "Avvia preparazione"
+              )}
             </Button>
             <Button
               variant="outline"
               className="border-red-300 text-red-500 hover:bg-red-50 hover:text-red-600"
               onClick={() => onUpdateStatus(order.id, "cancelled")}
+              disabled={isUpdating}
             >
-              <span className="text-lg mr-2">⚠️</span>
-              Annulla
+              {isUpdating ? (
+                <>
+                  <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-red-500 border-t-transparent"></span>
+                  Aggiornamento...
+                </>
+              ) : (
+                <>
+                  <span className="text-lg mr-2">⚠️</span>
+                  Annulla
+                </>
+              )}
             </Button>
           </div>
         )
@@ -118,16 +139,34 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus }: Adm
             <Button
               className="flex-1 bg-green-500 hover:bg-green-600 text-white"
               onClick={() => onUpdateStatus(order.id, "completed")}
+              disabled={isUpdating}
             >
-              Completa ordine
+              {isUpdating ? (
+                <>
+                  <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                  Aggiornamento...
+                </>
+              ) : (
+                "Completa ordine"
+              )}
             </Button>
             <Button
               variant="outline"
               className="border-red-300 text-red-500 hover:bg-red-50 hover:text-red-600"
               onClick={() => onUpdateStatus(order.id, "cancelled")}
+              disabled={isUpdating}
             >
-              <span className="text-lg mr-2">⚠️</span>
-              Annulla
+              {isUpdating ? (
+                <>
+                  <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-red-500 border-t-transparent"></span>
+                  Aggiornamento...
+                </>
+              ) : (
+                <>
+                  <span className="text-lg mr-2">⚠️</span>
+                  Annulla
+                </>
+              )}
             </Button>
           </div>
         )

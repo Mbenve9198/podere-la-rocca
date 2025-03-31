@@ -20,9 +20,10 @@ type AdminCardViewProps = {
   orders: Order[]
   onViewDetails: (order: Order) => void
   onUpdateStatus: (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => void
+  updatingOrderIds: string[]
 }
 
-export default function AdminCardView({ orders, onViewDetails, onUpdateStatus }: AdminCardViewProps) {
+export default function AdminCardView({ orders, onViewDetails, onUpdateStatus, updatingOrderIds }: AdminCardViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null)
 
@@ -236,16 +237,36 @@ export default function AdminCardView({ orders, onViewDetails, onUpdateStatus }:
                     <Button
                       className="bg-green-500 hover:bg-green-600 text-white"
                       onClick={() => onUpdateStatus(currentOrder.id, "processing")}
+                      disabled={updatingOrderIds.includes(currentOrder.id)}
                     >
-                      <span className="text-lg mr-2">🔄</span>
-                      Avvia
+                      {updatingOrderIds.includes(currentOrder.id) ? (
+                        <>
+                          <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg mr-2">🔄</span>
+                          Avvia
+                        </>
+                      )}
                     </Button>
                     <Button
                       className="bg-red-500 hover:bg-red-600 text-white"
                       onClick={() => onUpdateStatus(currentOrder.id, "cancelled")}
+                      disabled={updatingOrderIds.includes(currentOrder.id)}
                     >
-                      <span className="text-lg mr-2">❌</span>
-                      Annulla
+                      {updatingOrderIds.includes(currentOrder.id) ? (
+                        <>
+                          <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg mr-2">❌</span>
+                          Annulla
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
@@ -255,16 +276,36 @@ export default function AdminCardView({ orders, onViewDetails, onUpdateStatus }:
                     <Button
                       className="bg-green-500 hover:bg-green-600 text-white"
                       onClick={() => onUpdateStatus(currentOrder.id, "completed")}
+                      disabled={updatingOrderIds.includes(currentOrder.id)}
                     >
-                      <span className="text-lg mr-2">✅</span>
-                      Completa
+                      {updatingOrderIds.includes(currentOrder.id) ? (
+                        <>
+                          <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg mr-2">✅</span>
+                          Completa
+                        </>
+                      )}
                     </Button>
                     <Button
                       className="bg-red-500 hover:bg-red-600 text-white"
                       onClick={() => onUpdateStatus(currentOrder.id, "cancelled")}
+                      disabled={updatingOrderIds.includes(currentOrder.id)}
                     >
-                      <span className="text-lg mr-2">❌</span>
-                      Annulla
+                      {updatingOrderIds.includes(currentOrder.id) ? (
+                        <>
+                          <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-white border-t-transparent"></span>
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg mr-2">❌</span>
+                          Annulla
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
