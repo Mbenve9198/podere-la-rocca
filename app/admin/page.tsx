@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ClipboardList, MenuSquare, BarChart3 } from "lucide-react"
@@ -9,126 +9,185 @@ import AdminCardView from "./card-view"
 import AdminOrderDetail from "./order-detail"
 import { useRouter } from "next/navigation"
 
-// Mock data for orders
-const mockOrders = [
-  {
-    id: "ord-001",
-    customerName: "Marco Rossi",
-    location: "camera",
-    locationDetail: "Junior suite 10",
-    timestamp: Date.now() - 1000 * 60 * 15, // 15 minutes ago
-    status: "waiting",
-    items: [
-      { id: "aperol", name: "Aperol Spritz", price: 7, quantity: 2 },
-      { id: "acqua", name: "Acqua naturale 500ml", price: 1.5, quantity: 1 },
-    ],
-    total: 15.5,
-  },
-  {
-    id: "ord-002",
-    customerName: "Giulia Bianchi",
-    location: "piscina",
-    locationDetail: "Ombrellone 3",
-    timestamp: Date.now() - 1000 * 60 * 8, // 8 minutes ago
-    status: "processing",
-    items: [
-      { id: "insalatona-tonno", name: "Insalatona con tonno, pomodorini, lattuga e olive", price: 12, quantity: 1 },
-      { id: "coca-cola", name: "Coca Cola", price: 3, quantity: 2 },
-    ],
-    total: 18,
-  },
-  {
-    id: "ord-003",
-    customerName: "Alessandro Verdi",
-    location: "giardino",
-    locationDetail: null,
-    timestamp: Date.now() - 1000 * 60 * 30, // 30 minutes ago
-    status: "completed",
-    items: [
-      { id: "cappuccino", name: "Cappuccino", price: 3, quantity: 1 },
-      { id: "caffe", name: "Caffè", price: 2, quantity: 1 },
-    ],
-    total: 5,
-  },
-  {
-    id: "ord-004",
-    customerName: "Francesca Neri",
-    location: "piscina",
-    locationDetail: "Ombrellone 7",
-    timestamp: Date.now() - 1000 * 60 * 5, // 5 minutes ago
-    status: "waiting",
-    items: [
-      { id: "hugo", name: "Hugo", price: 7, quantity: 3 },
-      { id: "patatine", name: "Patatine fritte", price: 4, quantity: 1 },
-    ],
-    total: 25,
-  },
-  {
-    id: "ord-005",
-    customerName: "Roberto Marini",
-    location: "camera",
-    locationDetail: "Poggio Saragio 11",
-    timestamp: Date.now() - 1000 * 60 * 12, // 12 minutes ago
-    status: "waiting",
-    items: [
-      { id: "tagliata", name: "Tagliata di vitellone bianco al rosmarino", price: 18, quantity: 1 },
-      { id: "insalata-mista", name: "Insalata mista (pomodorini e lattuga)", price: 4, quantity: 1 },
-      { id: "birra", name: "Birra 33cl", price: 6, quantity: 1 },
-    ],
-    total: 28,
-  },
-]
+// Definisco il tipo Order corrispondente al modello del database
+type OrderItem = {
+  id: string
+  name: string
+  price: number
+  quantity: number
+}
 
 type Order = {
   id: string
+  orderNumber?: string
   customerName: string
   location: string
   locationDetail: string | null
   timestamp: number
   status: "waiting" | "processing" | "completed" | "cancelled"
-  items: { id: string; name: string; price: number; quantity: number }[]
+  items: OrderItem[]
   total: number
 }
 
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
+  const [orders, setOrders] = useState<Order[]>([])
   const [viewMode, setViewMode] = useState<"list" | "card">("list")
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "processing" | "completed" | "cancelled">(
     "waiting",
   )
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Filter orders based on status
-  const filteredOrders = orders.filter((order) => {
-    if (statusFilter === "all") return true
-    return order.status === statusFilter
-  })
-
-  // Update order status
-  const updateOrderStatus = (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
-    )
-
-    // If we're updating the currently selected order, update that too
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus })
+  // Funzione per recuperare gli ordini dal backend
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      // Costruisci l'URL con i filtri necessari
+      let url = "/api/admin/orders"
+      if (statusFilter !== "all") {
+        url += `?status=${statusFilter}`
+      }
+      
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`Errore nella richiesta: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.success && Array.isArray(data.data)) {
+        // Converti i dati dal formato API al formato del componente
+        const formattedOrders: Order[] = data.data.map((order: any) => ({
+          id: order._id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          location: order.location,
+          locationDetail: order.locationDetail,
+          timestamp: new Date(order.createdAt).getTime(),
+          status: order.status,
+          items: order.items.map((item: any) => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          total: order.total
+        }))
+        
+        setOrders(formattedOrders)
+      } else {
+        setOrders([])
+        if (!data.success) {
+          setError(data.message || "Errore nel recupero degli ordini")
+        }
+      }
+    } catch (err: any) {
+      console.error("Errore durante il recupero degli ordini:", err)
+      setError(err.message || "Si è verificato un errore durante il recupero degli ordini")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // View order details
+  // Carica gli ordini quando il componente viene montato o quando cambia il filtro
+  useEffect(() => {
+    fetchOrders()
+    
+    // Imposta un intervallo per aggiornare gli ordini periodicamente (ogni 30 secondi)
+    const interval = setInterval(() => {
+      fetchOrders()
+    }, 30000)
+    
+    // Rimuovi l'intervallo quando il componente viene smontato
+    return () => clearInterval(interval)
+  }, [statusFilter])
+
+  // Aggiorna lo stato di un ordine
+  const updateOrderStatus = async (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Errore nell'aggiornamento dello stato: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Aggiorna lo stato localmente per evitare di ricaricare tutti gli ordini
+        setOrders(prevOrders =>
+          prevOrders.map(order => (order.id === orderId ? { ...order, status: newStatus } : order))
+        )
+        
+        // Se stiamo aggiornando l'ordine selezionato, aggiorniamo anche quello
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder({ ...selectedOrder, status: newStatus })
+        }
+      } else {
+        console.error("Errore nell'aggiornamento dello stato:", data.message)
+        setError(data.message || "Errore nell'aggiornamento dello stato dell'ordine")
+      }
+    } catch (err: any) {
+      console.error("Errore durante l'aggiornamento dello stato dell'ordine:", err)
+      setError(err.message || "Si è verificato un errore durante l'aggiornamento dello stato")
+    }
+  }
+
+  // Visualizza i dettagli dell'ordine
   const viewOrderDetails = (order: Order) => {
     setSelectedOrder(order)
   }
 
-  // Close order details
+  // Chiudi i dettagli dell'ordine
   const closeOrderDetails = () => {
     setSelectedOrder(null)
   }
 
-  // If an order is selected, show its details
+  // Se è in corso il caricamento, mostra un indicatore
+  if (isLoading && orders.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen bg-amber-50 items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-amber-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-medium mb-2">Caricamento ordini...</h2>
+          <p className="text-gray-500">Attendere prego</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Se c'è un errore, mostralo
+  if (error && orders.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen bg-amber-50 items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-medium mb-2">Errore</h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <Button 
+            className="bg-amber-500 hover:bg-amber-600"
+            onClick={() => fetchOrders()}
+          >
+            Riprova
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Se un ordine è selezionato, mostra i suoi dettagli
   if (selectedOrder) {
     return (
       <>
@@ -141,11 +200,17 @@ export default function AdminDashboard() {
               <ClipboardList className="h-6 w-6" />
               <span className="text-xs mt-1 font-medium">Ordini</span>
             </button>
-            <button className="flex flex-col items-center justify-center text-gray-600">
+            <button 
+              className="flex flex-col items-center justify-center text-gray-600"
+              onClick={() => router.push("/admin/menu")}
+            >
               <MenuSquare className="h-6 w-6" />
               <span className="text-xs mt-1">Modifica menu</span>
             </button>
-            <button className="flex flex-col items-center justify-center text-gray-600">
+            <button 
+              className="flex flex-col items-center justify-center text-gray-600"
+              onClick={() => router.push("/admin/analytics")}
+            >
               <BarChart3 className="h-6 w-6" />
               <span className="text-xs mt-1">Analytics</span>
             </button>
@@ -154,6 +219,9 @@ export default function AdminDashboard() {
       </>
     )
   }
+
+  // Filtra gli ordini in base allo stato selezionato
+  const filteredOrders = statusFilter === "all" ? orders : orders.filter(order => order.status === statusFilter)
 
   return (
     <div className="flex flex-col min-h-screen bg-amber-50 pb-16">
@@ -192,6 +260,28 @@ export default function AdminDashboard() {
           <option value="completed">Completati</option>
           <option value="cancelled">Annullati</option>
         </select>
+      </div>
+
+      {/* Pulsante di aggiornamento manuale */}
+      <div className="px-4 pt-2">
+        <Button
+          variant="outline"
+          className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+          onClick={() => fetchOrders()}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <span className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-amber-700 rounded-full"></span>
+              Aggiornamento...
+            </>
+          ) : (
+            <>
+              <span className="mr-2">🔄</span>
+              Aggiorna ordini
+            </>
+          )}
+        </Button>
       </div>
 
       <main className="flex-1 p-4">
