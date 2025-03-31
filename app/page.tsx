@@ -361,13 +361,7 @@ export default function Home() {
         />
         
         <main className="flex-1 flex flex-col items-center p-6 pt-20">
-          {/* Carosello delle esperienze */}
-          <ExperienceCarousel 
-            language={language}
-            className="mb-8 w-full max-w-md"
-          />
-          
-          <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 mb-8">
             <h2 className="text-xl font-playful text-black mb-4 uppercase tracking-tight">{t.subtitle}</h2>
 
             <div className="space-y-4 mt-6">
@@ -418,6 +412,12 @@ export default function Home() {
               {t.startButton} <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Carosello delle esperienze */}
+          <ExperienceCarousel 
+            language={language}
+            className="w-full max-w-md"
+          />
         </main>
 
         {showLanguageSelector && (

@@ -42,7 +42,7 @@ export function ExperienceCarousel({
   return (
     <div 
       className={cn(
-        "relative overflow-hidden w-full max-w-md rounded-xl shadow-lg",
+        "relative overflow-hidden w-full max-w-md rounded-xl shadow-lg bg-white",
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -61,6 +61,7 @@ export function ExperienceCarousel({
                 experience={experience} 
                 language={language} 
                 className="rounded-none shadow-none"
+                motionEnabled={false}
               />
             </div>
           ))}
@@ -70,25 +71,25 @@ export function ExperienceCarousel({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
+          className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
           onClick={(e) => {
             e.stopPropagation()
             goToPrevious()
           }}
         >
-          <ChevronLeft className="h-6 w-6 text-amber-800" />
+          <ChevronLeft className="h-4 w-4 text-amber-800" />
         </Button>
         
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
           onClick={(e) => {
             e.stopPropagation()
             goToNext()
           }}
         >
-          <ChevronRight className="h-6 w-6 text-amber-800" />
+          <ChevronRight className="h-4 w-4 text-amber-800" />
         </Button>
       </div>
       
