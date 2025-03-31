@@ -11,10 +11,12 @@ export async function GET(req: NextRequest) {
     console.log('API /me: Ricevuta richiesta')
     
     // Prova a ottenere il token dal cookie
-    const cookieStore = cookies();
-    let token = cookieStore.get('admin_token')?.value;
-
-    // Se non c'è un token nei cookie, controlla l'header Authorization
+    let token: string | undefined;
+    
+    // Prova prima a prendere il token dai cookie della richiesta (più affidabile nel middleware)
+    token = req.cookies.get('admin_token')?.value;
+    
+    // Se non c'è un token nei cookie della richiesta, controlla l'header Authorization
     const authHeader = req.headers.get('Authorization');
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
