@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import CrossSellingDialog from "@/components/cross-selling-dialog"
+import { LoadingScreen } from "@/components/ui/loading-screen"
 
 type CategoryType = {
   _id: string;
@@ -186,9 +187,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
   // Visualizza un indicatore di caricamento
   if (loading) {
     return (
-      <div className="w-full max-w-md text-center py-8">
-        <p className="text-gray-600">{t.loading}</p>
-      </div>
+      <LoadingScreen text={t.loading} />
     );
   }
 

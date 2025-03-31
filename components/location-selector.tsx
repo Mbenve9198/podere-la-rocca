@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import { LoadingScreen } from "@/components/ui/loading-screen"
 
 type LocationType = {
   _id: string;
@@ -97,9 +98,7 @@ export default function LocationSelector({ onSelectLocation, onSelectDetail, lan
   // Mostra un messaggio di caricamento se i dati non sono ancora pronti
   if (loading) {
     return (
-      <div className="w-full max-w-md text-center py-8">
-        <p className="text-gray-600">{t.loading}</p>
-      </div>
+      <LoadingScreen text={t.loading} />
     );
   }
 

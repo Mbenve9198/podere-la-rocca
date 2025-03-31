@@ -4,6 +4,9 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle, Clock, RotateCw, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
+import { it, enUS } from "date-fns/locale"
+import { LoadingScreen } from "@/components/ui/loading-screen"
 
 type Order = {
   id: string
@@ -184,12 +187,10 @@ export default function OrderHistory({ language, onNewOrder, customerName }: Ord
     return locationNames[location] || location
   }
 
-  // Visualizza un indicatore di caricamento durante il recupero degli ordini
+  // Visualizza un messaggio di caricamento
   if (isLoading) {
     return (
-      <div className="w-full max-w-md text-center py-8">
-        <p className="text-gray-600">{t.loading}</p>
-      </div>
+      <LoadingScreen text={t.loading} />
     );
   }
 

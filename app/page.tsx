@@ -12,6 +12,8 @@ import Menu from "./menu"
 import OrderSummary from "./order-summary"
 import OrderHistory from "./order-history"
 import { v4 as uuidv4 } from "uuid"
+import Image from "next/image"
+import { LoadingScreen } from "@/components/ui/loading-screen"
 
 type Order = {
   id: string
@@ -30,12 +32,11 @@ export default function Home() {
   const [name, setName] = useState("")
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
   const [language, setLanguage] = useState("it") // Default language is Italian
-  const [step, setStep] = useState<
-    "location" | "user-info" | "menu-categories" | "menu" | "order-summary" | "order-history"
-  >("location")
+  const [step, setStep] = useState("location")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   // Check if location is provided in URL (from QR code)
   useEffect(() => {
@@ -200,6 +201,9 @@ export default function Home() {
 
   const handlePlaceOrder = async () => {
     try {
+      // Mostra indicatore di caricamento
+      setIsLoading(true);
+      
       // Prepara i dati dell'ordine
       const orderData = {
         customerName: name,
@@ -237,12 +241,15 @@ export default function Home() {
         setCart([]);
         setStep("order-history");
       } else {
-        console.error('Errore nella creazione dell\'ordine:', result.message);
+        console.error('Errore dal server:', result);
         // Qui potresti mostrare un messaggio di errore all'utente
       }
     } catch (error) {
       console.error('Errore durante l\'invio dell\'ordine:', error);
       // Qui potresti mostrare un messaggio di errore all'utente
+    } finally {
+      // Nascondi indicatore di caricamento
+      setIsLoading(false);
     }
   };
 
@@ -493,14 +500,138 @@ export default function Home() {
     )
   }
 
-  return null
+  return (
+    <div className="flex flex-col min-h-screen bg-amber-100">
+      {isLoading && <LoadingScreen fullScreen={true} />}
+      
+      <Header 
+        showBackButton={true} 
+        onBackClick={() => setStep(orders.length > 0 ? "order-history" : "user-info")} 
+        showOrdersButton={true}
+        hideLanguageButton={false}
+      />
+      
+      <main className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
+        {step === "location" && (
+          <>
+            <h2 className="text-xl font-playful text-black mb-8 text-center uppercase tracking-tight">
+              {t.selectLocation}
+            </h2>
+
+            <LocationSelector
+              onSelectLocation={(loc) => {
+                setLocation(loc)
+                setStep("user-info")
+              }}
+              onSelectDetail={setLocationDetail}
+              language={language}
+            />
+          </>
+        )}
+        {step === "user-info" && (
+          <>
+            <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-playful text-black mb-4 uppercase tracking-tight">{t.subtitle}</h2>
+
+              <div className="space-y-4 mt-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-800 mb-1">
+                    {t.nameLabel}
+                  </label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t.namePlaceholder}
+                    className="w-full border-amber-300 focus:border-amber-500 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">{t.locationLabel}</label>
+                  <div className="flex items-center justify-between bg-amber-50 p-3 rounded-md border border-amber-200">
+                    <div className="flex items-center gap-3">
+                      <LocationIcon location={location || ""} />
+                      <span className="font-medium text-gray-800">
+                        {getLocationName(location || "", language)}
+                        {locationDetail && ` - ${locationDetail}`}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setLocation(null)
+                        setLocationDetail(null)
+                        setStep("location")
+                      }}
+                      className="text-gray-800 hover:text-black hover:bg-amber-100 touch-manipulation"
+                    >
+                      {t.changeLocation}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-playful uppercase tracking-wide h-12 touch-manipulation"
+                disabled={!name.trim()}
+                onClick={handleStartOrdering}
+              >
+                {t.startButton} <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
+        {step === "order-history" && (
+          <OrderHistory language={language} onNewOrder={handleNewOrder} customerName={name} />
+        )}
+        {step === "menu-categories" && (
+          <MenuCategories language={language} onSelectCategory={handleSelectCategory} />
+        )}
+        {step === "menu" && selectedCategory && (
+          <Menu
+            language={language}
+            category={selectedCategory}
+            onBack={handleBackFromMenu}
+            onProceedToSummary={handleProceedToSummary}
+          />
+        )}
+        {step === "order-summary" && (
+          <OrderSummary
+            cart={cart}
+            updateCart={updateCart}
+            customerName={name}
+            updateCustomerName={updateCustomerName}
+            location={location}
+            locationDetail={locationDetail}
+            updateLocation={updateLocation}
+            onBack={handleBackFromSummary}
+            language={language}
+            onPlaceOrder={handlePlaceOrder}
+          />
+        )}
+      </main>
+
+      {showLanguageSelector && (
+        <LanguageSelector
+          currentLanguage={language}
+          onSelectLanguage={(lang) => {
+            setLanguage(lang)
+            setShowLanguageSelector(false)
+          }}
+          onClose={() => setShowLanguageSelector(false)}
+        />
+      )}
+    </div>
+  )
 }
 
 // Helper component to show the appropriate icon based on location
 function LocationIcon({ location }: { location: string }) {
   switch (location) {
     case "camera":
-      return <span className="text-2xl">🛏️</span>
+      return <span className="text-2xl">🏠</span>
     case "piscina":
       return <span className="text-2xl">🏖️</span>
     case "giardino":
