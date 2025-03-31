@@ -71,7 +71,7 @@ export function ExperienceCarousel({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
+          className="absolute left-1 bottom-10 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
           onClick={(e) => {
             e.stopPropagation()
             goToPrevious()
@@ -83,7 +83,7 @@ export function ExperienceCarousel({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
+          className="absolute right-1 bottom-10 h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-md z-10"
           onClick={(e) => {
             e.stopPropagation()
             goToNext()

@@ -102,13 +102,9 @@ export function ExperienceCard({
             <p className="text-xs text-gray-600 line-clamp-1">{t.info}</p>
           </div>
           {showButton && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="self-end mt-1 px-2 py-1 h-7 text-xs text-amber-800 hover:text-amber-900 hover:bg-amber-100"
-            >
+            <p className="self-end mt-1 px-2 py-1 text-xs text-amber-800 italic">
               {t.askReception}
-            </Button>
+            </p>
           )}
         </div>
       </Card>
@@ -126,7 +122,7 @@ export function ExperienceCard({
         whileHover={motionEnabled ? { scale: 1.03 } : undefined}
         transition={{ duration: 0.3 }}
       >
-        <div className="relative w-full h-32">
+        <div className="relative w-full aspect-square">
           <Image 
             src={experience.image} 
             alt={title}
@@ -141,13 +137,9 @@ export function ExperienceCard({
           <p className="text-xs text-gray-600 mt-1 line-clamp-2">{description}</p>
           
           {showButton && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full mt-2 h-8 text-xs text-amber-800 border-amber-300 hover:bg-amber-100"
-            >
+            <p className="w-full mt-2 text-xs text-amber-800 text-center italic">
               {t.askReception}
-            </Button>
+            </p>
           )}
         </div>
       </Card>
@@ -164,7 +156,7 @@ export function ExperienceCard({
       whileHover={motionEnabled ? { scale: 1.03 } : undefined}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative w-full h-48">
+      <div className="relative w-full aspect-square">
         <Image 
           src={experience.image} 
           alt={title}
@@ -179,11 +171,9 @@ export function ExperienceCard({
         <p className="text-sm text-gray-600 mt-2">{description}</p>
         
         {showButton && (
-          <Button
-            className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white"
-          >
+          <p className="w-full mt-4 text-center text-amber-800 font-medium italic">
             {t.askReception}
-          </Button>
+          </p>
         )}
       </div>
     </Card>
