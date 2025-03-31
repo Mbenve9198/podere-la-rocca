@@ -1,160 +1,247 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { EyeIcon, EyeOffIcon, LockIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { CheckCircle, ClipboardList, MenuSquare, BarChart3 } from "lucide-react"
+import AdminListView from "./list-view"
+import AdminCardView from "./card-view"
+import AdminOrderDetail from "./order-detail"
+import { useRouter } from "next/navigation"
 
-export default function AdminLoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const router = useRouter();
+// Mock data for orders
+const mockOrders = [
+  {
+    id: "ord-001",
+    customerName: "Marco Rossi",
+    location: "camera",
+    locationDetail: "Junior suite 10",
+    timestamp: Date.now() - 1000 * 60 * 15, // 15 minutes ago
+    status: "waiting",
+    items: [
+      { id: "aperol", name: "Aperol Spritz", price: 7, quantity: 2 },
+      { id: "acqua", name: "Acqua naturale 500ml", price: 1.5, quantity: 1 },
+    ],
+    total: 15.5,
+  },
+  {
+    id: "ord-002",
+    customerName: "Giulia Bianchi",
+    location: "piscina",
+    locationDetail: "Ombrellone 3",
+    timestamp: Date.now() - 1000 * 60 * 8, // 8 minutes ago
+    status: "processing",
+    items: [
+      { id: "insalatona-tonno", name: "Insalatona con tonno, pomodorini, lattuga e olive", price: 12, quantity: 1 },
+      { id: "coca-cola", name: "Coca Cola", price: 3, quantity: 2 },
+    ],
+    total: 18,
+  },
+  {
+    id: "ord-003",
+    customerName: "Alessandro Verdi",
+    location: "giardino",
+    locationDetail: null,
+    timestamp: Date.now() - 1000 * 60 * 30, // 30 minutes ago
+    status: "completed",
+    items: [
+      { id: "cappuccino", name: "Cappuccino", price: 3, quantity: 1 },
+      { id: "caffe", name: "Caffè", price: 2, quantity: 1 },
+    ],
+    total: 5,
+  },
+  {
+    id: "ord-004",
+    customerName: "Francesca Neri",
+    location: "piscina",
+    locationDetail: "Ombrellone 7",
+    timestamp: Date.now() - 1000 * 60 * 5, // 5 minutes ago
+    status: "waiting",
+    items: [
+      { id: "hugo", name: "Hugo", price: 7, quantity: 3 },
+      { id: "patatine", name: "Patatine fritte", price: 4, quantity: 1 },
+    ],
+    total: 25,
+  },
+  {
+    id: "ord-005",
+    customerName: "Roberto Marini",
+    location: "camera",
+    locationDetail: "Poggio Saragio 11",
+    timestamp: Date.now() - 1000 * 60 * 12, // 12 minutes ago
+    status: "waiting",
+    items: [
+      { id: "tagliata", name: "Tagliata di vitellone bianco al rosmarino", price: 18, quantity: 1 },
+      { id: "insalata-mista", name: "Insalata mista (pomodorini e lattuga)", price: 4, quantity: 1 },
+      { id: "birra", name: "Birra 33cl", price: 6, quantity: 1 },
+    ],
+    total: 28,
+  },
+]
 
-  // Verifica se l'utente è già autenticato
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await fetch('/api/admin/auth/me');
-        const data = await response.json();
+type Order = {
+  id: string
+  customerName: string
+  location: string
+  locationDetail: string | null
+  timestamp: number
+  status: "waiting" | "processing" | "completed" | "cancelled"
+  items: { id: string; name: string; price: number; quantity: number }[]
+  total: number
+}
 
-        if (data.success && data.admin) {
-          setIsAuthenticated(true);
-          router.push('/admin/dashboard');
-        }
-      } catch (error) {
-        // L'utente non è autenticato
-        console.error('Errore di autenticazione:', error);
-      }
+export default function AdminDashboard() {
+  const [orders, setOrders] = useState<Order[]>(mockOrders)
+  const [viewMode, setViewMode] = useState<"list" | "card">("list")
+  const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "processing" | "completed" | "cancelled">(
+    "waiting",
+  )
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const router = useRouter()
+
+  // Filter orders based on status
+  const filteredOrders = orders.filter((order) => {
+    if (statusFilter === "all") return true
+    return order.status === statusFilter
+  })
+
+  // Update order status
+  const updateOrderStatus = (orderId: string, newStatus: "waiting" | "processing" | "completed" | "cancelled") => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
+    )
+
+    // If we're updating the currently selected order, update that too
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder({ ...selectedOrder, status: newStatus })
     }
+  }
 
-    checkAuth();
-  }, [router]);
+  // View order details
+  const viewOrderDetails = (order: Order) => {
+    setSelectedOrder(order)
+  }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // Close order details
+  const closeOrderDetails = () => {
+    setSelectedOrder(null)
+  }
 
-    try {
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+  // If an order is selected, show its details
+  if (selectedOrder) {
+    return (
+      <>
+        <AdminOrderDetail order={selectedOrder} onClose={closeOrderDetails} onUpdateStatus={updateOrderStatus} />
 
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Accesso effettuato con successo');
-        router.push('/admin/dashboard');
-      } else {
-        toast.error(data.message || 'Credenziali non valide');
-      }
-    } catch (error) {
-      toast.error('Si è verificato un errore durante il login');
-      console.error('Errore durante il login:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (isAuthenticated) {
-    return null; // Non mostrare nulla durante il reindirizzamento
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+          <div className="grid grid-cols-3 h-16">
+            <button className="flex flex-col items-center justify-center bg-amber-50 text-amber-600 border-t-2 border-amber-500">
+              <ClipboardList className="h-6 w-6" />
+              <span className="text-xs mt-1 font-medium">Ordini</span>
+            </button>
+            <button className="flex flex-col items-center justify-center text-gray-600">
+              <MenuSquare className="h-6 w-6" />
+              <span className="text-xs mt-1">Modifica menu</span>
+            </button>
+            <button className="flex flex-col items-center justify-center text-gray-600">
+              <BarChart3 className="h-6 w-6" />
+              <span className="text-xs mt-1">Analytics</span>
+            </button>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-amber-100 py-4 px-6 flex items-center shadow-sm">
-        <h1 className="text-xl font-semibold text-amber-800">Podere La Rocca</h1>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col justify-center items-center p-6">
-        <div className="w-full max-w-sm">
-          {/* Login Card */}
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-            {/* Card Header */}
-            <div className="bg-amber-100 p-6 flex justify-center">
-              <div className="bg-amber-500/10 rounded-full p-4">
-                <LockIcon className="h-8 w-8 text-amber-800" />
-              </div>
-            </div>
-            
-            {/* Card Content */}
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-amber-800 text-center mb-6">
-                Accesso Amministratore
-              </h2>
-              
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-medium text-amber-800">
-                    Email
-                  </Label>
-                  <Input
-                    id="username"
-                    type="email"
-                    placeholder="admin@podere-la-rocca.com"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="rounded-lg border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-amber-400"
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-amber-800">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="rounded-lg border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-amber-400 pr-10"
-                      required
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-amber-800"
-                    >
-                      {showPassword ? (
-                        <EyeOffIcon className="h-5 w-5" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-lg py-2.5 font-medium mt-6"
-                  disabled={loading}
-                >
-                  {loading ? 'Accesso in corso...' : 'Accedi'}
-                </Button>
-              </form>
-            </div>
-          </div>
-          
-          <p className="text-center text-amber-700 text-sm mt-6 px-4">
-            Pannello riservato al personale autorizzato di Podere La Rocca
-          </p>
+    <div className="flex flex-col min-h-screen bg-amber-50 pb-16">
+      {/* Large tabs for view switching */}
+      <div className="p-4 bg-white border-b border-gray-200">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            className={`h-14 text-lg ${viewMode === "list" ? "bg-amber-500 hover:bg-amber-600" : "border-amber-300 text-amber-700"}`}
+            onClick={() => setViewMode("list")}
+          >
+            <span className="text-xl mr-2">📋</span>
+            Lista
+          </Button>
+          <Button
+            variant={viewMode === "card" ? "default" : "outline"}
+            className={`h-14 text-lg ${viewMode === "card" ? "bg-amber-500 hover:bg-amber-600" : "border-amber-300 text-amber-700"}`}
+            onClick={() => setViewMode("card")}
+          >
+            <span className="text-xl mr-2">🃏</span>
+            Card
+          </Button>
         </div>
+      </div>
+
+      {/* Status filter select */}
+      <div className="p-4 bg-white border-b border-gray-200">
+        <select
+          className="w-full p-3 border border-gray-300 rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+        >
+          <option value="all">Tutti gli ordini</option>
+          <option value="waiting">In attesa</option>
+          <option value="processing">In lavorazione</option>
+          <option value="completed">Completati</option>
+          <option value="cancelled">Annullati</option>
+        </select>
+      </div>
+
+      <main className="flex-1 p-4">
+        {filteredOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="text-center">
+                <div className="bg-white p-8 rounded-lg shadow-md">
+                  <CheckCircle className="h-16 w-16 mx-auto text-amber-500 mb-4" />
+                  <h2 className="text-xl font-medium mb-2">Nessun ordine</h2>
+                  <p>Non ci sono ordini con questo stato</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        ) : viewMode === "list" ? (
+          <AdminListView orders={filteredOrders} onViewDetails={viewOrderDetails} onUpdateStatus={updateOrderStatus} />
+        ) : (
+          <AdminCardView orders={filteredOrders} onViewDetails={viewOrderDetails} onUpdateStatus={updateOrderStatus} />
+        )}
       </main>
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+        <div className="grid grid-cols-3 h-16">
+          <button className="flex flex-col items-center justify-center bg-amber-50 text-amber-600 border-t-2 border-amber-500">
+            <span className="text-xl">📋</span>
+            <span className="text-xs mt-1 font-medium">Ordini</span>
+          </button>
+          <button
+            className="flex flex-col items-center justify-center text-gray-600"
+            onClick={() => router.push("/admin/menu")}
+          >
+            <span className="text-xl">🍽️</span>
+            <span className="text-xs mt-1">Modifica menu</span>
+          </button>
+          <button
+            className="flex flex-col items-center justify-center text-gray-600"
+            onClick={() => router.push("/admin/analytics")}
+          >
+            <span className="text-xl">📊</span>
+            <span className="text-xs mt-1">Analytics</span>
+          </button>
+        </div>
+      </div>
     </div>
-  );
-} 
+  )
+}
+

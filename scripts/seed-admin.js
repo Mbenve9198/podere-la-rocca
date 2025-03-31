@@ -1,5 +1,17 @@
 // Script per creare l'utente amministratore
 
+// Carica le variabili d'ambiente da .env.local
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Percorso assoluto al file .env.local
+const envPath = path.resolve(process.cwd(), '.env.local');
+console.log(`Caricamento variabili d'ambiente da: ${envPath}`);
+dotenv.config({ path: envPath });
+
+console.log('Variabili d\'ambiente caricate:');
+console.log(`MONGODB_URI esistente: ${process.env.MONGODB_URI ? 'Sì' : 'No'}`);
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -64,6 +76,7 @@ const Admin = mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
 async function seedAdmin() {
   try {
     console.log('Connessione al database MongoDB...');
+    console.log(`URI: ${MONGODB_URI.replace(/\/\/(.+?):(.+?)@/, '//****:****@')}`); // Nasconde le credenziali
     await mongoose.connect(MONGODB_URI);
     console.log('Connessione al database stabilita');
 
