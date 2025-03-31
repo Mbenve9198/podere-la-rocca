@@ -43,17 +43,9 @@ export default function AdminDashboard() {
 
   // Funzione per ottenere gli headers con l'autorizzazione se disponibile
   const getAuthHeaders = () => {
-    const headers: Record<string, string> = {
+    return {
       'Content-Type': 'application/json'
     };
-    
-    // Aggiungi il token dal localStorage se disponibile
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    return headers;
   };
 
   // Funzione per recuperare gli ordini dal backend
@@ -69,8 +61,7 @@ export default function AdminDashboard() {
       }
       
       const response = await fetch(url, {
-        headers: getAuthHeaders(),
-        credentials: 'include' // Includi i cookie se disponibili
+        headers: getAuthHeaders()
       })
       
       if (!response.ok) {
@@ -132,8 +123,7 @@ export default function AdminDashboard() {
       const response = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status: newStatus }),
-        credentials: 'include'
+        body: JSON.stringify({ status: newStatus })
       })
       
       if (!response.ok) {
