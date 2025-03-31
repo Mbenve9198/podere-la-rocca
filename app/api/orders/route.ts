@@ -20,8 +20,16 @@ export async function GET(req: NextRequest) {
     // Costruisci il filtro per la query
     const filter: any = {};
     if (customerName) {
-      // Utilizzare una regex per trovare corrispondenze parziali
-      filter.customerName = { $regex: customerName, $options: 'i' };
+      // Utilizzare una regex più flessibile per trovare corrispondenze parziali
+      // Creiamo una regex che cerca ogni parte del nome separatamente
+      const nameParts = customerName.split(/\s+/).filter(part => part.trim().length > 0);
+      if (nameParts.length > 0) {
+        const regexParts = nameParts.map(part => `(?=.*${part})`).join('');
+        filter.customerName = { $regex: `${regexParts}.*`, $options: 'i' };
+        console.log(`API GET /orders: Regex per customerName: ${filter.customerName.$regex}`);
+      } else {
+        filter.customerName = { $regex: customerName, $options: 'i' };
+      }
     }
     
     console.log('API GET /orders: Filtro query:', filter);

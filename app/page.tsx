@@ -38,6 +38,20 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  // Recupera il nome cliente dal localStorage al caricamento del componente
+  useEffect(() => {
+    const savedCustomerName = localStorage.getItem('customerName');
+    if (savedCustomerName) {
+      setName(savedCustomerName);
+    }
+  }, []);
+
+  // Salva il nome del cliente nel localStorage quando viene aggiornato
+  const updateCustomerName = (newName: string) => {
+    setName(newName);
+    localStorage.setItem('customerName', newName);
+  }
+
   // Check if location is provided in URL (from QR code)
   useEffect(() => {
     const locationParam = searchParams.get("location")
@@ -196,10 +210,6 @@ export default function Home() {
     setCart(newCart)
   }
 
-  const updateCustomerName = (newName: string) => {
-    setName(newName)
-  }
-
   const updateLocation = (newLocation: string | null, newDetail: string | null) => {
     setLocation(newLocation)
     setLocationDetail(newDetail)
@@ -212,6 +222,9 @@ export default function Home() {
     try {
       // Mostra indicatore di caricamento
       setIsLoading(true);
+      
+      // Salva il nome del cliente prima di inviare l'ordine
+      localStorage.setItem('customerName', name);
       
       // Prepara i dati dell'ordine
       const orderData = {
