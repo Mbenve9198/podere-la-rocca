@@ -19,7 +19,7 @@ export const experiences: Experience[] = [
     titleEn: "Cooking pasta course",
     descriptionIt: "Impara l'arte della pasta fatta in casa con i nostri chef esperti. Un'esperienza autentica toscana.",
     descriptionEn: "Learn the art of homemade pasta with our expert chefs. An authentic Tuscan experience.",
-    image: "https://images.unsplash.com/photo-1556760544-74068565f05c?q=80&w=800&auto=format&fit=crop"
+    image: "/images/experiences/pasta-course.png"
   },
   {
     id: "wine-tasting",
@@ -27,7 +27,7 @@ export const experiences: Experience[] = [
     titleEn: "Wine tasting",
     descriptionIt: "Assapora i nostri vini pregiati con una degustazione guidata nei nostri vigneti.",
     descriptionEn: "Savor our fine wines with a guided tasting in our vineyards.",
-    image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800&auto=format&fit=crop"
+    image: "/images/experiences/wine-tasting.png"
   },
   {
     id: "cocktail-experience",
@@ -35,7 +35,7 @@ export const experiences: Experience[] = [
     titleEn: "Cocktail experience",
     descriptionIt: "Scopri i segreti dei migliori cocktail con i nostri bartender professionisti.",
     descriptionEn: "Discover the secrets of the best cocktails with our professional bartenders.",
-    image: "https://images.unsplash.com/photo-1587223962930-cb7f31384c19?q=80&w=800&auto=format&fit=crop"
+    image: "/images/experiences/cocktail-experience.png"
   }
 ]
 
