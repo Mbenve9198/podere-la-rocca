@@ -44,10 +44,8 @@ export const sendOrderNotification = async (order: any) => {
       `${item.name} x${item.quantity}`
     ).join(', ');
     
-    // URL per completare l'ordine (link diretto all'azione di completamento)
-    const completeOrderUrl = `https://www.poderelarocca.app/admin/${order._id}/complete`;
-    // URL per visualizzare i dettagli dell'ordine
-    const viewOrderUrl = `https://www.poderelarocca.app/admin/${order._id}`;
+    // Prepariamo solo l'ID dell'ordine per i link
+    const orderId = order._id.toString();
     
     // Preparazione dei parametri per il template WhatsApp
     const templateParams = {
@@ -56,7 +54,7 @@ export const sendOrderNotification = async (order: any) => {
       3: order.locationDetail || 'Non specificata', // Posizione dettagliata
       4: itemsList, // Items ordinati
       5: order.total.toFixed(2), // Totale dell'ordine
-      6: completeOrderUrl // URL per completare l'ordine (corretto)
+      6: orderId // Solo l'ID dell'ordine, il template avrà l'URL completo
     };
     
     // Invio messaggio tramite WhatsApp utilizzando il Messaging Service di Twilio
