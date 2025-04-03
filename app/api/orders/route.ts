@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
+import { sendOrderNotification } from '@/lib/twilio';
 
 export async function GET(req: NextRequest) {
   try {
@@ -120,6 +121,11 @@ export async function POST(req: NextRequest) {
       const savedOrder = await newOrder.save();
       console.log(`API /orders: Ordine salvato con ID: ${savedOrder._id} e numero ordine: ${savedOrder.orderNumber}`);
       
+      // Invia notifica WhatsApp agli amministratori
+      console.log('API /orders: Invio notifica agli amministratori...');
+      const notificationResult = await sendOrderNotification(savedOrder);
+      console.log('API /orders: Risultato notifica:', notificationResult);
+      
       return NextResponse.json({
         success: true,
         message: 'Ordine creato con successo',
@@ -128,6 +134,7 @@ export async function POST(req: NextRequest) {
           orderNumber: savedOrder.orderNumber,
           status: savedOrder.status,
           createdAt: savedOrder.createdAt,
+          notificationSent: notificationResult.success
         },
       });
     } catch (saveError: any) {
