@@ -44,6 +44,11 @@ export const sendOrderNotification = async (order: any) => {
       `${item.name} x${item.quantity}`
     ).join(', ');
     
+    // URL per completare l'ordine (link diretto all'azione di completamento)
+    const completeOrderUrl = `https://www.poderelarocca.app/admin/${order._id}/complete`;
+    // URL per visualizzare i dettagli dell'ordine
+    const viewOrderUrl = `https://www.poderelarocca.app/admin/${order._id}`;
+    
     // Preparazione dei parametri per il template WhatsApp
     const templateParams = {
       1: order.location, // Zona dell'ordine
