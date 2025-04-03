@@ -56,7 +56,7 @@ export const sendOrderNotification = async (order: any) => {
       3: order.locationDetail || 'Non specificata', // Posizione dettagliata
       4: itemsList, // Items ordinati
       5: order.total.toFixed(2), // Totale dell'ordine
-      6: order._id // ID ordine per il link di completamento
+      6: completeOrderUrl // URL per completare l'ordine (corretto)
     };
     
     // Invio messaggio tramite WhatsApp utilizzando il Messaging Service di Twilio

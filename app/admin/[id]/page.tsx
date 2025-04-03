@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
 
-export default function CompleteOrderPage({ params }: { params: { orderId: string } }) {
+export default function CompleteOrderPage({ params }: { params: { id: string } }) {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Aggiornamento stato ordine...');
   const [orderDetails, setOrderDetails] = useState<any>(null);
@@ -19,7 +19,7 @@ export default function CompleteOrderPage({ params }: { params: { orderId: strin
         
         if (autoComplete) {
           // Aggiorna lo stato dell'ordine a "completato"
-          const response = await fetch(`/api/admin/orders/${params.orderId}/status`, {
+          const response = await fetch(`/api/admin/orders/${params.id}/status`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export default function CompleteOrderPage({ params }: { params: { orderId: strin
 
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`/api/admin/orders/${params.orderId}`);
+        const response = await fetch(`/api/admin/orders/${params.id}`);
         
         if (!response.ok) {
           throw new Error('Impossibile recuperare i dettagli dell\'ordine');
@@ -82,7 +82,7 @@ export default function CompleteOrderPage({ params }: { params: { orderId: strin
     };
 
     updateOrderStatus();
-  }, [params.orderId]);
+  }, [params.id]);
 
   const getStatusText = (status: string) => {
     switch (status) {
