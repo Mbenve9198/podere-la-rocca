@@ -44,8 +44,9 @@ export const sendOrderNotification = async (order: any) => {
       `${item.name} x${item.quantity}`
     ).join(', ');
     
-    // Prepariamo solo l'ID dell'ordine per i link
+    // Prepariamo l'ID dell'ordine e il percorso di completamento
     const orderId = order._id.toString();
+    const completeOrderPath = `${orderId}/complete`;
     
     // Preparazione dei parametri per il template WhatsApp
     const templateParams = {
@@ -54,7 +55,7 @@ export const sendOrderNotification = async (order: any) => {
       3: order.locationDetail || 'Non specificata', // Posizione dettagliata
       4: itemsList, // Items ordinati
       5: order.total.toFixed(2), // Totale dell'ordine
-      6: orderId // Solo l'ID dell'ordine, il template avrà l'URL completo
+      6: completeOrderPath // ID dell'ordine + /complete per l'URL di completamento
     };
     
     // Invio messaggio tramite WhatsApp utilizzando il Messaging Service di Twilio
