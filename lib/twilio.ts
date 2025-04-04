@@ -4,12 +4,12 @@ import twilio from 'twilio';
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-const toNumber = process.env.TWILIO_ADMIN_WHATSAPP;
+const toNumbers = process.env.TWILIO_ADMIN_WHATSAPP?.split(',') || [];
 const fromNumber = process.env.TWILIO_FROM_NUMBER;
 
 // Controlla se le configurazioni di Twilio sono disponibili
 const isTwilioConfigured = () => {
-  return !!(accountSid && authToken && messagingServiceSid && toNumber);
+  return !!(accountSid && authToken && messagingServiceSid && toNumbers.length > 0);
 };
 
 // Crea client Twilio se le configurazioni sono disponibili
@@ -58,28 +58,33 @@ export const sendOrderNotification = async (order: any) => {
       6: completeOrderPath // ID dell'ordine + /complete per l'URL di completamento
     };
     
-    // Invio messaggio tramite WhatsApp utilizzando il Messaging Service di Twilio
-    const message = await client.messages.create({
-      body: '', // Il corpo è definito dal template
-      from: `whatsapp:${fromNumber}`,
-      to: `whatsapp:${toNumber}`,
-      messagingServiceSid: messagingServiceSid,
-      contentSid: process.env.TWILIO_CONTENT_SID, // ID del template WhatsApp
-      contentVariables: JSON.stringify(templateParams)
+    // Invio messaggi a tutti i numeri specificati
+    const messagePromises = toNumbers.map(async (toNumber) => {
+      const message = await client.messages.create({
+        body: '', // Il corpo è definito dal template
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${toNumber.trim()}`,
+        messagingServiceSid: messagingServiceSid,
+        contentSid: process.env.TWILIO_CONTENT_SID, // ID del template WhatsApp
+        contentVariables: JSON.stringify(templateParams)
+      });
+      
+      console.log(`Notifica WhatsApp inviata a ${toNumber}: ${message.sid}`);
+      return message;
     });
     
-    console.log(`Notifica WhatsApp inviata: ${message.sid}`);
+    const messages = await Promise.all(messagePromises);
     
     return { 
       success: true, 
-      message: 'Notifica WhatsApp inviata con successo', 
-      data: { messageSid: message.sid } 
+      message: 'Notifiche WhatsApp inviate con successo', 
+      data: { messageSids: messages.map(m => m.sid) } 
     };
   } catch (error: any) {
-    console.error('Errore durante l\'invio della notifica WhatsApp:', error);
+    console.error('Errore durante l\'invio delle notifiche WhatsApp:', error);
     return { 
       success: false, 
-      message: 'Errore durante l\'invio della notifica WhatsApp', 
+      message: 'Errore durante l\'invio delle notifiche WhatsApp', 
       error: error.message 
     };
   }
