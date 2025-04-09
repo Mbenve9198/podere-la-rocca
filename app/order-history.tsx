@@ -18,7 +18,6 @@ type Order = {
   timestamp: number
   location: string | null
   locationDetail: string | null
-  pickupTime?: string
 }
 
 type OrderHistoryProps = {
@@ -56,8 +55,7 @@ export default function OrderHistory({ language, onNewOrder, customerName, onCli
       searchNameLabel: "Nome e Cognome",
       searchButton: "Cerca",
       searchNamePlaceholder: "Inserisci il tuo nome e cognome",
-      searchingOrders: "Ricerca ordini in corso...",
-      pickupTime: "Ritiro alle",
+      searchingOrders: "Ricerca ordini in corso..."
     },
     en: {
       title: "Your orders",
@@ -78,8 +76,7 @@ export default function OrderHistory({ language, onNewOrder, customerName, onCli
       searchNameLabel: "Full Name",
       searchButton: "Search",
       searchNamePlaceholder: "Enter your full name",
-      searchingOrders: "Searching orders...",
-      pickupTime: "Pickup at",
+      searchingOrders: "Searching orders..."
     },
   }
 
@@ -115,8 +112,7 @@ export default function OrderHistory({ language, onNewOrder, customerName, onCli
           status: order.status,
           timestamp: new Date(order.createdAt).getTime(),
           location: order.location,
-          locationDetail: order.locationDetail,
-          pickupTime: order.pickupTime
+          locationDetail: order.locationDetail
         }));
         
         setOrders(formattedOrders);
@@ -329,7 +325,6 @@ export default function OrderHistory({ language, onNewOrder, customerName, onCli
               <p className="text-sm font-medium text-gray-700">
                 {t.euro} {order.total.toFixed(2)} • {t.from} {getLocationName(order.location)}
                 {order.locationDetail && ` - ${order.locationDetail}`}
-                {order.pickupTime && ` • ${t.pickupTime} ${order.pickupTime}`}
               </p>
             </motion.div>
           ))}

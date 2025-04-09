@@ -104,7 +104,6 @@ export async function POST(req: NextRequest) {
         total: total,
         status: 'waiting',
         notes: data.notes || '',
-        pickupTime: data.pickupTime || null,
       });
       
       // Debug - verifichiamo i dati del nuovo ordine prima del salvataggio
@@ -114,8 +113,7 @@ export async function POST(req: NextRequest) {
         locationDetail: newOrder.locationDetail,
         items: newOrder.items.length,
         total: newOrder.total,
-        orderNumber: newOrder.orderNumber,
-        pickupTime: newOrder.pickupTime,
+        orderNumber: newOrder.orderNumber
       });
       
       // Salva l'ordine nel database
@@ -136,8 +134,7 @@ export async function POST(req: NextRequest) {
           orderNumber: savedOrder.orderNumber,
           status: savedOrder.status,
           createdAt: savedOrder.createdAt,
-          notificationSent: notificationResult.success,
-          pickupTime: savedOrder.pickupTime,
+          notificationSent: notificationResult.success
         },
       });
     } catch (saveError: any) {

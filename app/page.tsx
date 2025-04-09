@@ -27,7 +27,6 @@ type Order = {
   timestamp: number
   location: string | null
   locationDetail: string | null
-  pickupTime?: string
 }
 
 export default function Home() {
@@ -227,7 +226,7 @@ export default function Home() {
     }
   }
 
-  const handlePlaceOrder = async (pickupTime?: string) => {
+  const handlePlaceOrder = async () => {
     try {
       // Mostra indicatore di caricamento
       setIsLoading(true);
@@ -241,7 +240,6 @@ export default function Home() {
         location,
         locationDetail,
         items: cart,
-        pickupTime,
       };
       
       // Effettua la chiamata API per creare l'ordine
@@ -267,7 +265,6 @@ export default function Home() {
           timestamp: Date.now(),
           location,
           locationDetail,
-          pickupTime,
         };
         
         // Imposta la categoria correlata per il toast in base agli elementi nel carrello
