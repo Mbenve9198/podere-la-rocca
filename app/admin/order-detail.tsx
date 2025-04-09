@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 
 type Order = {
   id: string
@@ -12,6 +13,7 @@ type Order = {
   status: "waiting" | "processing" | "completed" | "cancelled"
   items: { id: string; name: string; price: number; quantity: number }[]
   total: number
+  pickupTime?: string
 }
 
 type AdminOrderDetailProps = {
@@ -22,6 +24,8 @@ type AdminOrderDetailProps = {
 }
 
 export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updatingOrderIds }: AdminOrderDetailProps) {
+  const { t } = useTranslation()
+
   // Format timestamp to readable date and time
   const formatDateTime = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -194,7 +198,7 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updat
           <Button variant="ghost" size="icon" className="text-white hover:bg-amber-600 mr-2" onClick={onClose}>
             <span className="text-lg">⬅️</span>
           </Button>
-          <h1 className="text-xl font-playful">Dettaglio Ordine</h1>
+          <h1 className="text-xl font-playful">{t.orderDetails}</h1>
         </div>
       </header>
 
@@ -213,20 +217,29 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updat
           </div>
 
           <div className="p-4 border-b border-gray-100">
-            <h3 className="font-medium text-gray-700 mb-2">Cliente</h3>
+            <h3 className="font-medium text-gray-700 mb-2">{t.customer}</h3>
             <p className="text-black">{order.customerName}</p>
           </div>
 
           <div className="p-4 border-b border-gray-100">
-            <h3 className="font-medium text-gray-700 mb-2">Posizione</h3>
-            <p className="text-black">
-              {getLocationName(order.location)}
-              {order.locationDetail && ` - ${order.locationDetail}`}
-            </p>
+            <div className="space-y-2">
+              <h3 className="font-medium text-gray-700">{t.location}</h3>
+              <p className="text-black">
+                {getLocationName(order.location)}
+                {order.locationDetail && ` - ${order.locationDetail}`}
+              </p>
+            </div>
+
+            {order.pickupTime && (
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-700">{t.pickupTime}</h3>
+                <p className="text-black">{order.pickupTime}</p>
+              </div>
+            )}
           </div>
 
           <div className="p-4 border-b border-gray-100">
-            <h3 className="font-medium text-gray-700 mb-2">Prodotti</h3>
+            <h3 className="font-medium text-gray-700 mb-2">{t.items}</h3>
             <div className="space-y-3">
               {order.items.map((item) => (
                 <div key={item.id} className="flex justify-between">
@@ -241,7 +254,7 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updat
 
           <div className="p-4 border-b border-gray-100">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium text-gray-700">Totale</h3>
+              <h3 className="font-medium text-gray-700">{t.total}</h3>
               <div className="font-bold text-lg">€{order.total.toFixed(2)}</div>
             </div>
           </div>
