@@ -5,6 +5,7 @@ import { QRCodeCanvas } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type Location = {
   _id: string
@@ -16,9 +17,19 @@ type Location = {
   }
 }
 
+type LocationType = 'camera' | 'piscina' | 'giardino' | 'all'
+
+const locationTypeLabels: Record<LocationType, string> = {
+  all: 'Tutte le posizioni',
+  camera: 'Camere',
+  piscina: 'Piscina',
+  giardino: 'Giardino'
+}
+
 export default function QRCodeGenerator() {
   const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedType, setSelectedType] = useState<LocationType>('all')
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -52,10 +63,18 @@ export default function QRCodeGenerator() {
   }
 
   const downloadAllQR = () => {
-    locations.forEach(location => {
+    const filteredLocations = selectedType === 'all' 
+      ? locations 
+      : locations.filter(loc => loc.type === selectedType)
+    
+    filteredLocations.forEach(location => {
       downloadQRCode(location)
     })
   }
+
+  const filteredLocations = selectedType === 'all' 
+    ? locations 
+    : locations.filter(loc => loc.type === selectedType)
 
   if (loading) {
     return <div>Caricamento...</div>
@@ -63,16 +82,30 @@ export default function QRCodeGenerator() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold">QR Code Generator</h2>
-        <Button onClick={downloadAllQR}>
-          <Download className="mr-2 h-4 w-4" />
-          Scarica Tutti
-        </Button>
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <Select value={selectedType} onValueChange={(value: LocationType) => setSelectedType(value)}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Seleziona categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(locationTypeLabels).map(([type, label]) => (
+                <SelectItem key={type} value={type}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={downloadAllQR} className="w-full md:w-auto">
+            <Download className="mr-2 h-4 w-4" />
+            Scarica {selectedType === 'all' ? 'Tutti' : locationTypeLabels[selectedType]}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {locations.map((location) => (
+        {filteredLocations.map((location) => (
           <Card key={location._id}>
             <CardHeader>
               <CardTitle className="text-center">{location.translations.it}</CardTitle>
