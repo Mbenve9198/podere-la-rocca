@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import JSZip from "jszip"
 
 type Location = {
   _id: string
@@ -30,6 +31,7 @@ export default function QRCodeGenerator() {
   const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState<LocationType>('all')
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -62,14 +64,42 @@ export default function QRCodeGenerator() {
     }
   }
 
-  const downloadAllQR = () => {
-    const filteredLocations = selectedType === 'all' 
-      ? locations 
-      : locations.filter(loc => loc.type === selectedType)
-    
-    filteredLocations.forEach(location => {
-      downloadQRCode(location)
-    })
+  const downloadAllQR = async () => {
+    try {
+      setIsDownloading(true)
+      const zip = new JSZip()
+      const filteredLocations = selectedType === 'all' 
+        ? locations 
+        : locations.filter(loc => loc.type === selectedType)
+
+      // Crea una cartella per il tipo selezionato
+      const folderName = selectedType === 'all' ? 'tutte-le-posizioni' : locationTypeLabels[selectedType].toLowerCase()
+      const folder = zip.folder(folderName)
+
+      // Aggiungi ogni QR code al zip
+      for (const location of filteredLocations) {
+        const canvas = document.getElementById(`qr-${location._id}`) as HTMLCanvasElement
+        if (canvas) {
+          const pngData = canvas.toDataURL("image/png").split(',')[1]
+          const fileName = `qr-${location.name.toLowerCase().replace(/\s+/g, '-')}.png`
+          folder?.file(fileName, pngData, { base64: true })
+        }
+      }
+
+      // Genera e scarica il file zip
+      const content = await zip.generateAsync({ type: "blob" })
+      const downloadLink = document.createElement("a")
+      downloadLink.href = URL.createObjectURL(content)
+      downloadLink.download = `qr-codes-${folderName}.zip`
+      document.body.appendChild(downloadLink)
+      downloadLink.click()
+      document.body.removeChild(downloadLink)
+      URL.revokeObjectURL(downloadLink.href)
+    } catch (error) {
+      console.error('Errore durante la creazione del file zip:', error)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const filteredLocations = selectedType === 'all' 
@@ -97,9 +127,13 @@ export default function QRCodeGenerator() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={downloadAllQR} className="w-full md:w-auto">
+          <Button 
+            onClick={downloadAllQR} 
+            className="w-full md:w-auto"
+            disabled={isDownloading}
+          >
             <Download className="mr-2 h-4 w-4" />
-            Scarica {selectedType === 'all' ? 'Tutti' : locationTypeLabels[selectedType]}
+            {isDownloading ? 'Creazione ZIP...' : `Scarica ${selectedType === 'all' ? 'Tutti' : locationTypeLabels[selectedType]}`}
           </Button>
         </div>
       </div>
