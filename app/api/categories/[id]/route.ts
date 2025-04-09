@@ -124,4 +124,55 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
+    
+    const categoryId = params.id;
+    
+    if (!categoryId) {
+      return NextResponse.json(
+        { success: false, message: 'ID categoria non fornito' },
+        { status: 400 }
+      );
+    }
+    
+    // Recupera i dati dalla richiesta
+    const body = await req.json();
+    
+    // Trova e aggiorna la categoria nel database
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      {
+        $set: {
+          order_deadline: body.order_deadline,
+          available_days: body.available_days,
+        },
+      },
+      { new: true }
+    );
+    
+    if (!updatedCategory) {
+      return NextResponse.json(
+        { success: false, message: 'Categoria non trovata' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({
+      success: true,
+      data: updatedCategory,
+    });
+  } catch (error: any) {
+    console.error('Errore durante l\'aggiornamento della categoria:', error);
+    return NextResponse.json(
+      { success: false, message: 'Errore durante l\'aggiornamento della categoria' },
+      { status: 500 }
+    );
+  }
 } 

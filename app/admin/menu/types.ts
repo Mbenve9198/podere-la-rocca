@@ -28,6 +28,7 @@ export interface IProduct {
   description?: string
   image?: string
   available: boolean
+  pickup_required: boolean
   translations: IProductTranslation
   createdAt?: string
   updatedAt?: string

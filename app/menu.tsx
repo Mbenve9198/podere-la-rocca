@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import CrossSellingDialog from "@/components/cross-selling-dialog"
 import { LoadingScreen } from "@/components/ui/loading-screen"
+import PickupBadge from "@/components/pickup-badge"
 
 type CategoryType = {
   _id: string;
@@ -234,6 +235,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
                   <h3 className="font-medium text-black">
                     {item.translations[language as keyof typeof item.translations]}
                   </h3>
+                  {item.category === 'lightLunch' && <PickupBadge language={language} />}
                   <p className="text-sm text-gray-600">
                     {t.euro} {item.price.toFixed(2)}
                   </p>
@@ -292,6 +294,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
                 <h3 className="font-medium text-black">
                   {item.translations[language as keyof typeof item.translations]}
                 </h3>
+                {item.category === 'lightLunch' && <PickupBadge language={language} />}
                 <p className="text-sm text-gray-600">
                   {t.euro} {item.price.toFixed(2)}
                 </p>

@@ -16,6 +16,7 @@ export interface IProduct extends Document {
   description?: string;
   image?: string;
   available: boolean;
+  pickup_required: boolean;
   translations: IProductTranslation;
 }
 
@@ -51,6 +52,10 @@ const ProductSchema = new Schema<IProduct>(
     available: {
       type: Boolean,
       default: true,
+    },
+    pickup_required: {
+      type: Boolean,
+      default: false,
     },
     translations: {
       it: {

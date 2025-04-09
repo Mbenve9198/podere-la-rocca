@@ -23,6 +23,7 @@ export default function ProductForm({ product, categories, onSave, onCancel, isN
       price: 0,
       category: categories.length > 0 ? categories[0]._id : "",
       available: true,
+      pickup_required: false,
       translations: {
         it: "",
         en: "",
@@ -73,6 +74,11 @@ export default function ProductForm({ product, categories, onSave, onCancel, isN
       setFormData({
         ...formData,
         available: (e.target as HTMLInputElement).checked,
+      })
+    } else if (name === "pickup_required") {
+      setFormData({
+        ...formData,
+        pickup_required: (e.target as HTMLInputElement).checked,
       })
     } else {
       setFormData({
@@ -267,6 +273,20 @@ export default function ProductForm({ product, categories, onSave, onCancel, isN
               />
               <label htmlFor="available" className="ml-2 block text-sm text-gray-700">
                 Disponibile
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="pickup_required"
+                name="pickup_required"
+                checked={formData.pickup_required}
+                onChange={handleChange}
+                className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-300 rounded"
+              />
+              <label htmlFor="pickup_required" className="ml-2 block text-sm text-gray-700">
+                Richiede ritiro in loco
               </label>
             </div>
 

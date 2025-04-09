@@ -16,6 +16,7 @@ export interface IOrder extends Document {
   total: number;
   status: 'waiting' | 'processing' | 'completed' | 'cancelled';
   notes?: string;
+  pickup_time?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +87,10 @@ const OrderSchema = new Schema<IOrder>(
     notes: {
       type: String,
       default: '',
+    },
+    pickup_time: {
+      type: String,
+      default: null,
     },
   },
   {

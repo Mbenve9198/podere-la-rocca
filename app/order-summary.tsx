@@ -5,6 +5,8 @@ import { Minus, Plus, Trash2, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import PickupTimeSelector from "@/components/pickup-time-selector"
+import { toast } from "react-hot-toast"
 
 type OrderSummaryProps = {
   cart: { id: string; name: string; price: number; quantity: number }[]
@@ -17,6 +19,8 @@ type OrderSummaryProps = {
   onBack: () => void
   language: string
   onPlaceOrder: () => void
+  pickupTime: string
+  updatePickupTime: (time: string) => void
 }
 
 export default function OrderSummary({
@@ -30,6 +34,8 @@ export default function OrderSummary({
   onBack,
   language,
   onPlaceOrder,
+  pickupTime,
+  updatePickupTime,
 }: OrderSummaryProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [newName, setNewName] = useState(customerName)
@@ -119,10 +125,42 @@ export default function OrderSummary({
     return locationNames[loc] || loc
   }
 
+  const validateOrderTime = () => {
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinutes = now.getMinutes()
+    
+    // Se sono le 12:00 o più tardi, non permettere l'ordinazione
+    if (currentHour >= 12) {
+      return false
+    }
+    
+    return true
+  }
+
   const handlePlaceOrder = () => {
-    // Call the parent's onPlaceOrder function
+    if (!validateOrderTime()) {
+      toast.error(
+        language === 'it'
+          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
+          : 'Light Lunch orders must be placed before 12:00'
+      )
+      return
+    }
+
+    if (hasLightLunchItems && !pickupTime) {
+      toast.error(
+        language === 'it'
+          ? 'Seleziona un orario di ritiro per il Light Lunch'
+          : 'Please select a pickup time for Light Lunch'
+      )
+      return
+    }
+
     onPlaceOrder()
   }
+
+  const hasLightLunchItems = cart.some(item => item.id.startsWith("lightLunch"))
 
   return (
     <div className="w-full max-w-md pb-20">
@@ -235,6 +273,23 @@ export default function OrderSummary({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasLightLunchItems && (
+        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+          <h3 className="text-amber-800 font-medium mb-2">
+            {language === 'it' ? 'Informazioni Light Lunch' : 'Light Lunch Information'}
+          </h3>
+          <p className="text-amber-700 text-sm mb-4">
+            {language === 'it' 
+              ? 'Il Light Lunch è disponibile dal lunedì alla domenica (escluso mercoledì). Le ordinazioni devono essere effettuate entro le 12:00 e ritirate entro le 12:30.'
+              : 'Light Lunch is available from Monday to Sunday (except Wednesday). Orders must be placed by 12:00 and picked up by 12:30.'}
+          </p>
+          <PickupTimeSelector
+            onTimeSelect={updatePickupTime}
+            disabled={!hasLightLunchItems}
+          />
         </div>
       )}
 

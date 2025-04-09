@@ -45,6 +45,7 @@ export default function Home() {
   const [toastRelatedCategory, setToastRelatedCategory] = useState<string | undefined>(undefined)
   const [showExperienceDialog, setShowExperienceDialog] = useState(false)
   const [selectedExperienceId, setSelectedExperienceId] = useState<string | undefined>(undefined)
+  const [pickupTime, setPickupTime] = useState<string>("")
 
   // Recupera il nome cliente dal localStorage al caricamento del componente
   useEffect(() => {
@@ -240,6 +241,7 @@ export default function Home() {
         location,
         locationDetail,
         items: cart,
+        pickup_time: pickupTime,
       };
       
       // Effettua la chiamata API per creare l'ordine
@@ -554,7 +556,7 @@ export default function Home() {
       <div className="flex flex-col min-h-screen bg-amber-100">
         <Header 
           showBackButton={true} 
-          onBackClick={handleBackFromSummary} 
+          onBackClick={() => setStep("user-info")} 
           hideLanguageButton={false}
         />
         
@@ -567,9 +569,11 @@ export default function Home() {
             location={location}
             locationDetail={locationDetail}
             updateLocation={updateLocation}
-            onBack={handleBackFromSummary}
+            onBack={() => setStep("user-info")}
             language={language}
             onPlaceOrder={handlePlaceOrder}
+            pickupTime={pickupTime}
+            updatePickupTime={setPickupTime}
           />
         </main>
 
@@ -693,9 +697,11 @@ export default function Home() {
             location={location}
             locationDetail={locationDetail}
             updateLocation={updateLocation}
-            onBack={handleBackFromSummary}
+            onBack={() => setStep("user-info")}
             language={language}
             onPlaceOrder={handlePlaceOrder}
+            pickupTime={pickupTime}
+            updatePickupTime={setPickupTime}
           />
         )}
       </main>

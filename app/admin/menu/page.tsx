@@ -8,6 +8,7 @@ import type { ICategory, IProduct } from "./types"
 import CategoryForm from "./category-form"
 import ProductForm from "./product-form"
 import { toast } from "react-hot-toast"
+import LightLunchSettings from "./light-lunch-settings"
 
 type View = "categories" | "products" | "editCategory" | "newCategory" | "editProduct" | "newProduct"
 
@@ -392,6 +393,13 @@ export default function MenuManagement() {
           </Button>
         ))}
       </div>
+
+      {/* Light Lunch Settings */}
+      {selectedCategory?.name === "lightLunch" && (
+        <div className="mt-8">
+          <LightLunchSettings categoryId={selectedCategory._id} />
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-8">

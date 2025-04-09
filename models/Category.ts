@@ -9,6 +9,8 @@ export interface ICategory extends Document {
   name: string;
   translations: ITranslation;
   order: number;
+  order_deadline?: string;
+  available_days?: string[];
 }
 
 const CategorySchema = new Schema<ICategory>(
@@ -33,6 +35,14 @@ const CategorySchema = new Schema<ICategory>(
     order: {
       type: Number,
       default: 0,
+    },
+    order_deadline: {
+      type: String,
+      default: null,
+    },
+    available_days: {
+      type: [String],
+      default: ['monday', 'tuesday', 'thursday', 'friday', 'saturday', 'sunday'],
     },
   },
   {
