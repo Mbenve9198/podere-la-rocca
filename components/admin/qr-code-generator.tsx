@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { QRCodeSVG } from "qrcode.react"
+import { QRCodeCanvas } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download } from "lucide-react"
@@ -78,7 +78,7 @@ export default function QRCodeGenerator() {
               <CardTitle className="text-center">{location.translations.it}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
-              <QRCodeSVG
+              <QRCodeCanvas
                 id={`qr-${location._id}`}
                 value={`https://www.poderelarocca.app/?location=${location.type}&detail=${encodeURIComponent(location.name)}`}
                 size={200}
