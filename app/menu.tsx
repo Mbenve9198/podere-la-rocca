@@ -201,23 +201,46 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
     }
 
     // Verifica gli orari di servizio
-    return (
-      (currentTime >= 11 && currentTime < 12.5) || // 11:00-12:30
-      (currentTime >= 16 && currentTime < 19) // 16:00-19:00
-    )
+    const isValidTime = (currentTime >= 11 && currentTime < 12.5) || (currentTime >= 16 && currentTime < 19)
+    return isValidTime
   }
 
   const handleAddToCart = (item: { id: string; name: string; price: number }) => {
     const currentCategory = mainCategories.find(cat => cat._id === activeCategory)
     const isLightLunch = currentCategory?.name === 'lightLunch'
 
-    if (!isLightLunch && !validateServiceHours()) {
-      toast.error(
-        language === 'it'
-          ? 'Il servizio non è disponibile in questo orario'
-          : 'Service is not available at this time'
-      )
-      return
+    if (!isLightLunch) {
+      if (!validateServiceHours()) {
+        toast.error(
+          language === 'it'
+            ? 'Il servizio non è disponibile in questo orario'
+            : 'Service is not available at this time'
+        )
+        return
+      }
+    } else {
+      // Validazione specifica per Light Lunch
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentDay = now.getDay()
+
+      if (currentDay === 3) {
+        toast.error(
+          language === 'it'
+            ? 'Il Light Lunch non è disponibile il mercoledì'
+            : 'Light Lunch is not available on Wednesday'
+        )
+        return
+      }
+
+      if (currentHour >= 12) {
+        toast.error(
+          language === 'it'
+            ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
+            : 'Light Lunch orders must be placed before 12:00'
+        )
+        return
+      }
     }
 
     addToCart(item)

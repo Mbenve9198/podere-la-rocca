@@ -318,17 +318,17 @@ export default function OrderSummary({
       )}
 
       {/* Order Type Information */}
-      {hasLightLunchItems && hasRegularItems && (
+      {hasLightLunchItems && (
         <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 space-y-2">
           <div className="flex items-start space-x-2">
             <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
             <div>
               <p className="text-amber-800 font-medium">
-                {language === 'it' ? 'Ordine Misto' : 'Mixed Order'}
+                {language === 'it' ? 'Informazioni Light Lunch' : 'Light Lunch Information'}
               </p>
               <ul className="text-sm text-amber-700 list-disc list-inside space-y-1 mt-1">
                 <li>{t.lightLunchNote}</li>
-                <li>{t.regularDeliveryNote}</li>
+                {hasRegularItems && <li>{t.regularDeliveryNote}</li>}
               </ul>
             </div>
           </div>
@@ -337,9 +337,9 @@ export default function OrderSummary({
 
       {/* Light Lunch Pickup Time */}
       {hasLightLunchItems && (
-        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mt-4">
           <h3 className="text-amber-800 font-medium mb-2">
-            {language === 'it' ? 'Informazioni Light Lunch' : 'Light Lunch Information'}
+            {language === 'it' ? 'Orario di ritiro' : 'Pickup Time'}
           </h3>
           <p className="text-amber-700 text-sm mb-4">
             {language === 'it' 
@@ -351,6 +351,23 @@ export default function OrderSummary({
             onTimeSelect={updatePickupTime}
             language={language}
           />
+        </div>
+      )}
+
+      {/* Regular Items Information */}
+      {hasRegularItems && !hasLightLunchItems && (
+        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mt-4">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <p className="text-amber-800 font-medium">
+                {language === 'it' ? 'Informazioni Consegna' : 'Delivery Information'}
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                {t.regularDeliveryNote}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
