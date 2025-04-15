@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import PickupTimeSelector from "@/components/pickup-time-selector"
 import { toast } from "react-hot-toast"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type OrderSummaryProps = {
   cart: { id: string; name: string; price: number; quantity: number }[]
@@ -129,32 +131,47 @@ export default function OrderSummary({
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinutes = now.getMinutes()
-    
-    // Se sono le 12:00 o più tardi, non permettere l'ordinazione
-    if (currentHour >= 12) {
-      return false
+    const currentDay = now.getDay() // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+
+    // Verifica se è mercoledì
+    if (currentDay === 3) { // 3 = Mercoledì
+      return {
+        isValid: false,
+        message: language === 'it'
+          ? 'Il Light Lunch non è disponibile il mercoledì'
+          : 'Light Lunch is not available on Wednesday'
+      }
     }
-    
-    return true
+
+    // Verifica l'orario
+    if (currentHour >= 12) {
+      return {
+        isValid: false,
+        message: language === 'it'
+          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
+          : 'Light Lunch orders must be placed before 12:00'
+      }
+    }
+
+    return { isValid: true }
   }
 
   const handlePlaceOrder = () => {
-    if (!validateOrderTime()) {
-      toast.error(
-        language === 'it'
-          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
-          : 'Light Lunch orders must be placed before 12:00'
-      )
-      return
-    }
+    if (hasLightLunchItems) {
+      const validation = validateOrderTime()
+      if (!validation.isValid && validation.message) {
+        toast.error(validation.message)
+        return
+      }
 
-    if (hasLightLunchItems && !pickupTime) {
-      toast.error(
-        language === 'it'
-          ? 'Seleziona un orario di ritiro per il Light Lunch'
-          : 'Please select a pickup time for Light Lunch'
-      )
-      return
+      if (!pickupTime) {
+        toast.error(
+          language === 'it'
+            ? 'Seleziona un orario di ritiro per il Light Lunch'
+            : 'Please select a pickup time for Light Lunch'
+        )
+        return
+      }
     }
 
     onPlaceOrder()

@@ -8,6 +8,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import CrossSellingDialog from "@/components/cross-selling-dialog"
 import { LoadingScreen } from "@/components/ui/loading-screen"
 import PickupBadge from "@/components/pickup-badge"
+import LightLunchWarning from "@/components/light-lunch-warning"
 
 type CategoryType = {
   _id: string;
@@ -361,6 +362,11 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       <h2 className="text-xl font-playful text-black my-4 uppercase tracking-tight">
         {activeCategory && mainCategories.find(cat => cat._id === activeCategory)?.translations[language as keyof typeof translations]}
       </h2>
+
+      {/* Light Lunch Warning */}
+      {products[activeCategory]?.some(p => p.category === 'lightLunch') && (
+        <LightLunchWarning language={language} />
+      )}
 
       {renderMenuItems()}
 
