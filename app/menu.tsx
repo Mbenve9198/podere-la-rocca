@@ -9,6 +9,8 @@ import CrossSellingDialog from "@/components/cross-selling-dialog"
 import { LoadingScreen } from "@/components/ui/loading-screen"
 import PickupBadge from "@/components/pickup-badge"
 import LightLunchWarning from "@/components/light-lunch-warning"
+import ServiceHoursWarning from "@/components/service-hours-warning"
+import { toast } from "react-hot-toast"
 
 type CategoryType = {
   _id: string;
@@ -186,6 +188,41 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
     return item ? item.quantity : 0;
   }
 
+  const validateServiceHours = () => {
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinutes = now.getMinutes()
+    const currentDay = now.getDay()
+    const currentTime = currentHour + (currentMinutes / 60)
+
+    // Verifica se è mercoledì pomeriggio
+    if (currentDay === 3 && currentHour >= 13) {
+      return false
+    }
+
+    // Verifica gli orari di servizio
+    return (
+      (currentTime >= 11 && currentTime < 12.5) || // 11:00-12:30
+      (currentTime >= 16 && currentTime < 19) // 16:00-19:00
+    )
+  }
+
+  const handleAddToCart = (item: { id: string; name: string; price: number }) => {
+    const currentCategory = mainCategories.find(cat => cat._id === activeCategory)
+    const isLightLunch = currentCategory?.name === 'lightLunch'
+
+    if (!isLightLunch && !validateServiceHours()) {
+      toast.error(
+        language === 'it'
+          ? 'Il servizio non è disponibile in questo orario'
+          : 'Service is not available at this time'
+      )
+      return
+    }
+
+    addToCart(item)
+  }
+
   // Visualizza un indicatore di caricamento
   if (loading) {
     return (
@@ -255,7 +292,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
                         ? "bg-green-100 hover:bg-green-200 text-green-700" 
                         : "bg-amber-100 hover:bg-amber-200 text-black"
                     } flex-shrink-0`}
-                    onClick={() => addToCart({
+                    onClick={() => handleAddToCart({
                       id: item._id,
                       name: item.translations[language as keyof typeof item.translations],
                       price: item.price
@@ -314,7 +351,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
                       ? "bg-green-100 hover:bg-green-200 text-green-700" 
                       : "bg-amber-100 hover:bg-amber-200 text-black"
                   }`}
-                  onClick={() => addToCart({
+                  onClick={() => handleAddToCart({
                     id: item._id,
                     name: item.translations[language as keyof typeof item.translations],
                     price: item.price
@@ -363,10 +400,16 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
         {activeCategory && mainCategories.find(cat => cat._id === activeCategory)?.translations[language as keyof typeof translations]}
       </h2>
 
-      {/* Light Lunch Warning */}
-      {mainCategories.find(cat => cat._id === activeCategory)?.name === 'lightLunch' && (
-        <LightLunchWarning language={language} />
-      )}
+      {/* Warnings */}
+      {(() => {
+        const currentCategory = mainCategories.find(cat => cat._id === activeCategory)
+        if (currentCategory?.name === 'lightLunch') {
+          return <LightLunchWarning language={language} />
+        } else if (currentCategory) {
+          return <ServiceHoursWarning language={language} />
+        }
+        return null
+      })()}
 
       {renderMenuItems()}
 
@@ -390,7 +433,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
         onClose={() => setShowCrossSelling(false)}
         onProceed={handleProceedToSummary}
         cartItems={cart}
-        onAddItem={addToCart}
+        onAddItem={handleAddToCart}
         language={language}
       />
     </div>
