@@ -364,7 +364,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       </h2>
 
       {/* Light Lunch Warning */}
-      {products[activeCategory]?.some(p => p.category === 'lightLunch') && (
+      {mainCategories.find(cat => cat._id === activeCategory)?.name === 'lightLunch' && (
         <LightLunchWarning language={language} />
       )}
 
