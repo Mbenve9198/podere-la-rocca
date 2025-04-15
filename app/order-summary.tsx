@@ -43,6 +43,72 @@ export default function OrderSummary({
   const [newName, setNewName] = useState(customerName)
   const [isEditingLocation, setIsEditingLocation] = useState(false)
 
+  const hasLightLunchItems = cart.some(item => item.id.startsWith("lightLunch"))
+  const hasRegularItems = cart.some(item => !item.id.startsWith("lightLunch"))
+
+  const validateOrderTime = () => {
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinutes = now.getMinutes()
+    const currentDay = now.getDay()
+    const currentTime = currentHour + (currentMinutes / 60)
+
+    let errors = []
+
+    // Validazione Light Lunch
+    if (hasLightLunchItems) {
+      if (currentDay === 3) {
+        errors.push(language === 'it'
+          ? 'Il Light Lunch non è disponibile il mercoledì'
+          : 'Light Lunch is not available on Wednesday')
+      }
+      if (currentHour >= 12) {
+        errors.push(language === 'it'
+          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
+          : 'Light Lunch orders must be placed before 12:00')
+      }
+    }
+
+    // Validazione altri prodotti
+    if (hasRegularItems) {
+      if (currentDay === 3 && currentHour >= 13) {
+        errors.push(language === 'it'
+          ? 'Il servizio è sospeso il mercoledì pomeriggio'
+          : 'Service is suspended on Wednesday afternoon')
+      }
+      const isValidTime = (currentTime >= 11 && currentTime < 12.5) || (currentTime >= 16 && currentTime < 19)
+      if (!isValidTime) {
+        errors.push(language === 'it'
+          ? 'Il servizio è disponibile dalle 11:00 alle 12:30 e dalle 16:00 alle 19:00'
+          : 'Service is available from 11:00 to 12:30 and from 16:00 to 19:00')
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
+  const handlePlaceOrder = () => {
+    const validation = validateOrderTime()
+    if (!validation.isValid) {
+      validation.errors.forEach(error => toast.error(error))
+      return
+    }
+
+    if (hasLightLunchItems && !pickupTime) {
+      toast.error(
+        language === 'it'
+          ? 'Seleziona un orario di ritiro per il Light Lunch'
+          : 'Please select a pickup time for Light Lunch'
+      )
+      return
+    }
+
+    onPlaceOrder()
+  }
+
   const translations = {
     it: {
       title: "Riepilogo Ordine",
@@ -56,13 +122,18 @@ export default function OrderSummary({
       cancel: "Annulla",
       total: "Totale",
       placeOrder: "Ordina",
-      euro: "Euro",
+      euro: "€",
       camera: "Camera",
       piscina: "Piscina",
       giardino: "Giardino",
       orderPlaced: "Ordine inviato!",
       orderConfirmation: "Il tuo ordine è stato inviato con successo. Ti verrà servito al più presto.",
       close: "Chiudi",
+      orderSummary: "Riepilogo Ordine",
+      editName: "Modifica Nome",
+      editLocation: "Modifica Posizione",
+      lightLunchNote: "Nota: I prodotti del Light Lunch devono essere ritirati al ristorante",
+      regularDeliveryNote: "Gli altri prodotti verranno consegnati alla posizione selezionata",
     },
     en: {
       title: "Order Summary",
@@ -76,13 +147,18 @@ export default function OrderSummary({
       cancel: "Cancel",
       total: "Total",
       placeOrder: "Place Order",
-      euro: "Euro",
+      euro: "€",
       camera: "Room",
       piscina: "Pool",
       giardino: "Garden",
       orderPlaced: "Order Placed!",
       orderConfirmation: "Your order has been successfully placed. It will be served to you shortly.",
       close: "Close",
+      orderSummary: "Order Summary",
+      editName: "Edit Name",
+      editLocation: "Edit Location",
+      lightLunchNote: "Note: Light Lunch items must be picked up at the restaurant",
+      regularDeliveryNote: "Other items will be delivered to the selected location",
     },
   }
 
@@ -126,58 +202,6 @@ export default function OrderSummary({
 
     return locationNames[loc] || loc
   }
-
-  const validateOrderTime = () => {
-    const now = new Date()
-    const currentHour = now.getHours()
-    const currentMinutes = now.getMinutes()
-    const currentDay = now.getDay() // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
-
-    // Verifica se è mercoledì
-    if (currentDay === 3) { // 3 = Mercoledì
-      return {
-        isValid: false,
-        message: language === 'it'
-          ? 'Il Light Lunch non è disponibile il mercoledì'
-          : 'Light Lunch is not available on Wednesday'
-      }
-    }
-
-    // Verifica l'orario
-    if (currentHour >= 12) {
-      return {
-        isValid: false,
-        message: language === 'it'
-          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
-          : 'Light Lunch orders must be placed before 12:00'
-      }
-    }
-
-    return { isValid: true }
-  }
-
-  const handlePlaceOrder = () => {
-    if (hasLightLunchItems) {
-      const validation = validateOrderTime()
-      if (!validation.isValid && validation.message) {
-        toast.error(validation.message)
-        return
-      }
-
-      if (!pickupTime) {
-        toast.error(
-          language === 'it'
-            ? 'Seleziona un orario di ritiro per il Light Lunch'
-            : 'Please select a pickup time for Light Lunch'
-        )
-        return
-      }
-    }
-
-    onPlaceOrder()
-  }
-
-  const hasLightLunchItems = cart.some(item => item.id.startsWith("lightLunch"))
 
   return (
     <div className="w-full max-w-md pb-20">
@@ -293,6 +317,25 @@ export default function OrderSummary({
         </div>
       )}
 
+      {/* Order Type Information */}
+      {hasLightLunchItems && hasRegularItems && (
+        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 space-y-2">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <p className="text-amber-800 font-medium">
+                {language === 'it' ? 'Ordine Misto' : 'Mixed Order'}
+              </p>
+              <ul className="text-sm text-amber-700 list-disc list-inside space-y-1 mt-1">
+                <li>{t.lightLunchNote}</li>
+                <li>{t.regularDeliveryNote}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Light Lunch Pickup Time */}
       {hasLightLunchItems && (
         <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
           <h3 className="text-amber-800 font-medium mb-2">
