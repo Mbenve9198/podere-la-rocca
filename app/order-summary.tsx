@@ -21,7 +21,7 @@ type OrderSummaryProps = {
   onBack: () => void
   language: string
   onPlaceOrder: () => void
-  pickupTime: string
+  pickupTime: string | undefined
   updatePickupTime: (time: string) => void
 }
 
@@ -347,8 +347,9 @@ export default function OrderSummary({
               : 'Light Lunch is available from Monday to Sunday (except Wednesday). Orders must be placed by 12:00 and picked up by 12:30.'}
           </p>
           <PickupTimeSelector
+            selectedTime={pickupTime || ""}
             onTimeSelect={updatePickupTime}
-            disabled={!hasLightLunchItems}
+            language={language}
           />
         </div>
       )}
