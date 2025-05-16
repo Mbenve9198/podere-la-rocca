@@ -262,8 +262,8 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       if (currentHour > deadlineHours || (currentHour === deadlineHours && currentMinutes >= deadlineMinutes)) {
         toast.error(
           language === 'it'
-            ? `Le ordinazioni del Light Lunch devono essere effettuate entro le ${lightLunchSettings.order_deadline}`
-            : `Light Lunch orders must be placed before ${lightLunchSettings.order_deadline}`
+            ? `È possibile ordinare Light Lunch solo fino alle ${lightLunchSettings.order_deadline}`
+            : `Light Lunch can only be ordered until ${lightLunchSettings.order_deadline}`
         )
         return
       }

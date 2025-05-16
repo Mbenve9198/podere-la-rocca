@@ -87,8 +87,8 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
         </AlertTitle>
         <AlertDescription>
           {language === 'it' 
-            ? `Le ordinazioni sono aperte fino alle ${orderDeadline}. Tempo rimanente: ${timeLeft}`
-            : `Orders are open until ${orderDeadline}. Time remaining: ${timeLeft}`}
+            ? `È possibile ordinare fino alle ${orderDeadline}. Tempo rimanente per ordinare: ${timeLeft}`
+            : `You can order until ${orderDeadline}. Time remaining to order: ${timeLeft}`}
         </AlertDescription>
       </Alert>
     )
@@ -102,8 +102,8 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
       </AlertTitle>
       <AlertDescription>
         {language === 'it'
-          ? `Il Light Lunch è disponibile dal lunedì alla domenica (escluso mercoledì) dalle 9:00 alle ${orderDeadline}`
-          : `Light Lunch is available from Monday to Sunday (except Wednesday) from 9:00 to ${orderDeadline}`}
+          ? `Il Light Lunch è disponibile per l'ordinazione dal lunedì alla domenica (escluso mercoledì) dalle 9:00 alle ${orderDeadline}`
+          : `Light Lunch is available for ordering from Monday to Sunday (except Wednesday) from 9:00 to ${orderDeadline}`}
       </AlertDescription>
     </Alert>
   )

@@ -97,8 +97,8 @@ export default function OrderSummary({
       // Verifica l'orario confrontando con l'orario limite
       if (currentHour > deadlineHours || (currentHour === deadlineHours && currentMinutes >= deadlineMinutes)) {
         errors.push(language === 'it'
-          ? `Le ordinazioni del Light Lunch devono essere effettuate entro le ${lightLunchSettings.order_deadline}`
-          : `Light Lunch orders must be placed before ${lightLunchSettings.order_deadline}`)
+          ? `È possibile ordinare Light Lunch solo fino alle ${lightLunchSettings.order_deadline}`
+          : `Light Lunch can only be ordered until ${lightLunchSettings.order_deadline}`)
       }
     }
 
@@ -376,8 +376,8 @@ export default function OrderSummary({
           </h3>
           <p className="text-amber-700 text-sm mb-4">
             {language === 'it' 
-              ? 'Il Light Lunch è disponibile dal lunedì alla domenica (escluso mercoledì). Le ordinazioni devono essere effettuate entro le 12:00 e ritirate entro le 12:30.'
-              : 'Light Lunch is available from Monday to Sunday (except Wednesday). Orders must be placed by 12:00 and picked up by 12:30.'}
+              ? `Il Light Lunch è disponibile per l'ordinazione dal lunedì alla domenica (escluso mercoledì) entro le ${lightLunchSettings.order_deadline}.`
+              : `Light Lunch is available for ordering from Monday to Sunday (except Wednesday) until ${lightLunchSettings.order_deadline}.`}
           </p>
           <PickupTimeSelector
             selectedTime={pickupTime || ""}

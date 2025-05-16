@@ -52,8 +52,8 @@ export default function PickupTimeSelector({ selectedTime, onTimeSelect, languag
       </Select>
       <p className="text-sm text-gray-500">
         {language === 'it' 
-          ? `L'ordine deve essere ritirato entro le 12:30`
-          : `Order must be picked up by 12:30`}
+          ? `È possibile ritirare l'ordine fino alle 12:30`
+          : `You can pick up your order until 12:30`}
       </p>
     </div>
   )
