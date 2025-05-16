@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Minus, Plus, Trash2, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -42,9 +42,37 @@ export default function OrderSummary({
   const [isEditingName, setIsEditingName] = useState(false)
   const [newName, setNewName] = useState(customerName)
   const [isEditingLocation, setIsEditingLocation] = useState(false)
+  const [lightLunchSettings, setLightLunchSettings] = useState({
+    order_deadline: "12:00",
+    available_days: ["monday", "tuesday", "thursday", "friday", "saturday", "sunday"]
+  })
 
   const hasLightLunchItems = cart.some(item => item.id.startsWith("lightLunch"))
   const hasRegularItems = cart.some(item => !item.id.startsWith("lightLunch"))
+
+  useEffect(() => {
+    // Carica le impostazioni del Light Lunch
+    const fetchSettings = async () => {
+      try {
+        // Assumiamo che ci sia un endpoint per ottenere la categoria "lightLunch"
+        const response = await fetch('/api/categories?name=lightLunch')
+        const data = await response.json()
+        if (data.success && data.data.length > 0) {
+          const settings = data.data[0]
+          setLightLunchSettings({
+            order_deadline: settings.order_deadline || "12:00",
+            available_days: settings.available_days || ["monday", "tuesday", "thursday", "friday", "saturday", "sunday"]
+          })
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni:", error)
+      }
+    }
+
+    if (hasLightLunchItems) {
+      fetchSettings()
+    }
+  }, [hasLightLunchItems])
 
   const validateOrderTime = () => {
     const now = new Date()
@@ -62,10 +90,15 @@ export default function OrderSummary({
           ? 'Il Light Lunch non è disponibile il mercoledì'
           : 'Light Lunch is not available on Wednesday')
       }
-      if (currentHour >= 12) {
+      
+      // Estrai ore e minuti dall'orario limite
+      const [deadlineHours, deadlineMinutes] = lightLunchSettings.order_deadline.split(':').map(Number)
+      
+      // Verifica l'orario confrontando con l'orario limite
+      if (currentHour > deadlineHours || (currentHour === deadlineHours && currentMinutes >= deadlineMinutes)) {
         errors.push(language === 'it'
-          ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
-          : 'Light Lunch orders must be placed before 12:00')
+          ? `Le ordinazioni del Light Lunch devono essere effettuate entro le ${lightLunchSettings.order_deadline}`
+          : `Light Lunch orders must be placed before ${lightLunchSettings.order_deadline}`)
       }
     }
 

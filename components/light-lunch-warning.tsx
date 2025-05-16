@@ -11,6 +11,28 @@ interface LightLunchWarningProps {
 export default function LightLunchWarning({ language }: LightLunchWarningProps) {
   const [isAvailable, setIsAvailable] = useState(true)
   const [timeLeft, setTimeLeft] = useState<string>("")
+  const [orderDeadline, setOrderDeadline] = useState<string>("12:00")
+
+  useEffect(() => {
+    // Carica le impostazioni del Light Lunch
+    const fetchSettings = async () => {
+      try {
+        // Assumiamo che ci sia un endpoint per ottenere la categoria "lightLunch"
+        const response = await fetch('/api/categories?name=lightLunch')
+        const data = await response.json()
+        if (data.success && data.data.length > 0) {
+          const settings = data.data[0]
+          if (settings.order_deadline) {
+            setOrderDeadline(settings.order_deadline)
+          }
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni:", error)
+      }
+    }
+
+    fetchSettings()
+  }, [])
 
   useEffect(() => {
     const checkAvailability = () => {
@@ -25,15 +47,18 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
         return
       }
 
-      // Verifica l'orario
-      if (currentHour >= 12) {
+      // Estrai ore e minuti dall'orario limite
+      const [deadlineHours, deadlineMinutes] = orderDeadline.split(':').map(Number)
+      
+      // Verifica l'orario confrontando con l'orario limite
+      if (currentHour > deadlineHours || (currentHour === deadlineHours && currentMinutes >= deadlineMinutes)) {
         setIsAvailable(false)
         return
       }
 
       // Calcola il tempo rimanente
       const deadline = new Date()
-      deadline.setHours(12, 0, 0, 0)
+      deadline.setHours(deadlineHours, deadlineMinutes, 0, 0)
       const diff = deadline.getTime() - now.getTime()
       
       if (diff <= 0) {
@@ -51,7 +76,7 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
     checkAvailability()
     const interval = setInterval(checkAvailability, 60000) // Aggiorna ogni minuto
     return () => clearInterval(interval)
-  }, [])
+  }, [orderDeadline])
 
   if (isAvailable) {
     return (
@@ -62,8 +87,8 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
         </AlertTitle>
         <AlertDescription>
           {language === 'it' 
-            ? `Le ordinazioni sono aperte fino alle 12:00. Tempo rimanente: ${timeLeft}`
-            : `Orders are open until 12:00. Time remaining: ${timeLeft}`}
+            ? `Le ordinazioni sono aperte fino alle ${orderDeadline}. Tempo rimanente: ${timeLeft}`
+            : `Orders are open until ${orderDeadline}. Time remaining: ${timeLeft}`}
         </AlertDescription>
       </Alert>
     )
@@ -77,8 +102,8 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
       </AlertTitle>
       <AlertDescription>
         {language === 'it'
-          ? 'Il Light Lunch è disponibile dal lunedì alla domenica (escluso mercoledì) dalle 9:00 alle 12:00'
-          : 'Light Lunch is available from Monday to Sunday (except Wednesday) from 9:00 to 12:00'}
+          ? `Il Light Lunch è disponibile dal lunedì alla domenica (escluso mercoledì) dalle 9:00 alle ${orderDeadline}`
+          : `Light Lunch is available from Monday to Sunday (except Wednesday) from 9:00 to ${orderDeadline}`}
       </AlertDescription>
     </Alert>
   )

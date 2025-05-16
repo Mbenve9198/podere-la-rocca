@@ -10,7 +10,28 @@ export interface PickupTimeSelectorProps {
 }
 
 export default function PickupTimeSelector({ selectedTime, onTimeSelect, language }: PickupTimeSelectorProps) {
-  const times = ["11:30", "11:45", "12:00", "12:15", "12:30"]
+  const [times, setTimes] = useState(["11:30", "11:45", "12:00", "12:15", "12:30"])
+  const [orderDeadline, setOrderDeadline] = useState<string>("12:00")
+
+  useEffect(() => {
+    // Carica le impostazioni del Light Lunch
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/categories?name=lightLunch')
+        const data = await response.json()
+        if (data.success && data.data.length > 0) {
+          const settings = data.data[0]
+          if (settings.order_deadline) {
+            setOrderDeadline(settings.order_deadline)
+          }
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni:", error)
+      }
+    }
+
+    fetchSettings()
+  }, [])
 
   return (
     <div className="space-y-2">
@@ -31,8 +52,8 @@ export default function PickupTimeSelector({ selectedTime, onTimeSelect, languag
       </Select>
       <p className="text-sm text-gray-500">
         {language === 'it' 
-          ? 'L\'ordine deve essere ritirato entro le 12:30'
-          : 'Order must be picked up by 12:30'}
+          ? `L'ordine deve essere ritirato entro le 12:30`
+          : `Order must be picked up by 12:30`}
       </p>
     </div>
   )

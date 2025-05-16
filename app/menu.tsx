@@ -53,6 +53,10 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
   const [products, setProducts] = useState<Record<string, ProductType[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lightLunchSettings, setLightLunchSettings] = useState({
+    order_deadline: "12:00",
+    available_days: ["monday", "tuesday", "thursday", "friday", "saturday", "sunday"]
+  })
 
   const translations = {
     it: {
@@ -84,6 +88,23 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
     const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // Recupera le impostazioni del Light Lunch
+        try {
+          const lightLunchResponse = await fetch('/api/categories?name=lightLunch');
+          if (lightLunchResponse.ok) {
+            const lightLunchData = await lightLunchResponse.json();
+            if (lightLunchData.success && lightLunchData.data.length > 0) {
+              const settings = lightLunchData.data[0];
+              setLightLunchSettings({
+                order_deadline: settings.order_deadline || "12:00",
+                available_days: settings.available_days || ["monday", "tuesday", "thursday", "friday", "saturday", "sunday"]
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Errore nel caricamento delle impostazioni del Light Lunch:", error);
+        }
         
         // Recupera le categorie principali
         const mainCategoriesResponse = await fetch('/api/categories?parent=main');
@@ -222,6 +243,7 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       // Validazione specifica per Light Lunch
       const now = new Date()
       const currentHour = now.getHours()
+      const currentMinutes = now.getMinutes()
       const currentDay = now.getDay()
 
       if (currentDay === 3) {
@@ -233,11 +255,15 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
         return
       }
 
-      if (currentHour >= 12) {
+      // Estrai ore e minuti dall'orario limite
+      const [deadlineHours, deadlineMinutes] = lightLunchSettings.order_deadline.split(':').map(Number)
+      
+      // Verifica l'orario confrontando con l'orario limite
+      if (currentHour > deadlineHours || (currentHour === deadlineHours && currentMinutes >= deadlineMinutes)) {
         toast.error(
           language === 'it'
-            ? 'Le ordinazioni del Light Lunch devono essere effettuate entro le 12:00'
-            : 'Light Lunch orders must be placed before 12:00'
+            ? `Le ordinazioni del Light Lunch devono essere effettuate entro le ${lightLunchSettings.order_deadline}`
+            : `Light Lunch orders must be placed before ${lightLunchSettings.order_deadline}`
         )
         return
       }
