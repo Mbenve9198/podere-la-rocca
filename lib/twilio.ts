@@ -44,18 +44,22 @@ export const sendOrderNotification = async (order: any) => {
       `${item.name} x${item.quantity}`
     ).join(', ');
     
-    // Aggiungiamo l'informazione sull'orario di ritiro se presente
-    let itemsInfo = itemsList;
+    // Aggiungiamo l'orario di ritiro alla lista se l'ordine contiene prodotti Light Lunch
+    const hasLightLunchItems = order.items.some((item: any) => {
+      // Verifica sia nel productId (come salvato nel DB) sia nel nome del prodotto
+      const productIdCheck = item.productId && 
+        (item.productId.startsWith('lightLunch_') || 
+         item.productId.includes('lightLunch'));
+         
+      const nameCheck = item.name && 
+        item.name.toLowerCase().includes('light lunch');
+        
+      return productIdCheck || nameCheck;
+    });
     
-    // Verifichiamo se è un ordine Light Lunch controllando gli item
-    const hasLightLunchItems = order.items.some((item: any) => 
-      item.productId?.includes('lightLunch') || 
-      item.name?.toLowerCase().includes('light lunch')
-    );
-    
-    // Se è un Light Lunch e c'è un orario di ritiro, lo aggiungiamo alle info
+    let itemsListWithPickupTime = itemsList;
     if (hasLightLunchItems && order.pickup_time) {
-      itemsInfo += `\n\n⏰ *RITIRO LIGHT LUNCH*: ${order.pickup_time}`;
+      itemsListWithPickupTime = `${itemsList} | ⏰ Ritiro Light Lunch: ${order.pickup_time}`;
     }
     
     // Prepariamo l'ID dell'ordine e il percorso di completamento
@@ -67,7 +71,7 @@ export const sendOrderNotification = async (order: any) => {
       1: order.location, // Zona dell'ordine
       2: order.customerName, // Nome cliente
       3: order.locationDetail || 'Non specificata', // Posizione dettagliata
-      4: itemsInfo, // Items ordinati + informazioni sull'orario di ritiro
+      4: itemsListWithPickupTime, // Items ordinati + eventuale orario di ritiro
       5: order.total.toFixed(2), // Totale dell'ordine
       6: completeOrderPath // ID dell'ordine + /complete per l'URL di completamento
     };
