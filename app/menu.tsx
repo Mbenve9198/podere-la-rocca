@@ -269,7 +269,15 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
       }
     }
 
-    addToCart(item)
+    // Per i prodotti Light Lunch, assicurati che l'ID inizi con "lightLunch_"
+    if (isLightLunch) {
+      addToCart({
+        ...item,
+        id: item.id.startsWith("lightLunch_") ? item.id : `lightLunch_${item.id}`
+      })
+    } else {
+      addToCart(item)
+    }
   }
 
   // Visualizza un indicatore di caricamento

@@ -47,8 +47,16 @@ export default function OrderSummary({
     available_days: ["monday", "tuesday", "thursday", "friday", "saturday", "sunday"]
   })
 
-  const hasLightLunchItems = cart.some(item => item.id.startsWith("lightLunch"))
-  const hasRegularItems = cart.some(item => !item.id.startsWith("lightLunch"))
+  const hasLightLunchItems = cart.some(item => 
+    item.id.startsWith("lightLunch_") ||
+    item.id.includes("lightLunch") ||
+    item.name.toLowerCase().includes("light lunch")
+  )
+  const hasRegularItems = cart.some(item => 
+    !item.id.startsWith("lightLunch_") && 
+    !item.id.includes("lightLunch") && 
+    !item.name.toLowerCase().includes("light lunch")
+  )
 
   useEffect(() => {
     // Carica le impostazioni del Light Lunch

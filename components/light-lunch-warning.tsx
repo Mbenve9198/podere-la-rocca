@@ -47,6 +47,12 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
         return
       }
 
+      // Verifica orario minimo (9:00)
+      if (currentHour < 9) {
+        setIsAvailable(false)
+        return
+      }
+
       // Estrai ore e minuti dall'orario limite
       const [deadlineHours, deadlineMinutes] = orderDeadline.split(':').map(Number)
       
