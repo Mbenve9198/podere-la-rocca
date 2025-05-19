@@ -12,6 +12,7 @@ type Order = {
   status: "waiting" | "processing" | "completed" | "cancelled"
   items: { id: string; name: string; price: number; quantity: number }[]
   total: number
+  pickup_time?: string | null
 }
 
 type AdminOrderDetailProps = {
@@ -187,6 +188,13 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updat
     }
   }
 
+  // Verifica se ci sono prodotti Light Lunch
+  const hasLightLunchItems = order.items.some(item => 
+    item.id.startsWith("lightLunch_") || 
+    item.id.includes("lightLunch") || 
+    item.name.toLowerCase().includes("light lunch")
+  )
+
   return (
     <div className="flex flex-col min-h-screen bg-amber-50 pb-16">
       <header className="bg-amber-500 text-white p-4 shadow-md">
@@ -224,6 +232,21 @@ export default function AdminOrderDetail({ order, onClose, onUpdateStatus, updat
               {order.locationDetail && ` - ${order.locationDetail}`}
             </p>
           </div>
+
+          {/* Visualizza orario di ritiro per Light Lunch */}
+          {hasLightLunchItems && order.pickup_time && (
+            <div className="p-4 border-b border-gray-100 bg-amber-50">
+              <div className="flex items-start space-x-2">
+                <div className="text-amber-500 text-lg mt-0.5">⏰</div>
+                <div>
+                  <h3 className="font-medium text-amber-800 mb-1">Orario ritiro Light Lunch</h3>
+                  <p className="text-amber-700">
+                    {order.pickup_time}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="p-4 border-b border-gray-100">
             <h3 className="font-medium text-gray-700 mb-2">Prodotti</h3>

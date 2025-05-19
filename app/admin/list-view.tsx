@@ -12,6 +12,7 @@ type Order = {
   status: "waiting" | "processing" | "completed" | "cancelled"
   items: { id: string; name: string; price: number; quantity: number }[]
   total: number
+  pickup_time?: string | null
 }
 
 type AdminListViewProps = {
@@ -65,6 +66,15 @@ export default function AdminListView({ orders, onViewDetails, onUpdateStatus, u
       default:
         return null
     }
+  }
+
+  // Verifica se un ordine contiene prodotti Light Lunch
+  const hasLightLunchItems = (order: Order) => {
+    return order.items.some(item => 
+      item.id.startsWith("lightLunch_") || 
+      item.id.includes("lightLunch") || 
+      item.name.toLowerCase().includes("light lunch")
+    )
   }
 
   // Update the getActionButton function to include a cancel button
@@ -185,6 +195,12 @@ export default function AdminListView({ orders, onViewDetails, onUpdateStatus, u
                 <p className="text-sm text-gray-600">
                   {order.items.reduce((sum, item) => sum + item.quantity, 0)} prodotti • Euro {order.total.toFixed(2)}
                 </p>
+                {hasLightLunchItems(order) && order.pickup_time && (
+                  <p className="text-sm text-amber-600 mt-1 flex items-center">
+                    <span className="mr-1">⏰</span>
+                    Ritiro Light Lunch: {order.pickup_time}
+                  </p>
+                )}
               </div>
               <Button
                 variant="ghost"

@@ -20,14 +20,15 @@ type OrderItem = {
 
 type Order = {
   id: string
-  orderNumber?: string
+  orderNumber: string
   customerName: string
   location: string
   locationDetail: string | null
   timestamp: number
   status: "waiting" | "processing" | "completed" | "cancelled"
-  items: OrderItem[]
+  items: { id: string; name: string; price: number; quantity: number }[]
   total: number
+  pickup_time?: string | null
 }
 
 export default function AdminDashboard() {
@@ -88,7 +89,8 @@ export default function AdminDashboard() {
             price: item.price,
             quantity: item.quantity
           })),
-          total: order.total
+          total: order.total,
+          pickup_time: order.pickup_time
         }))
         
         setOrders(formattedOrders)

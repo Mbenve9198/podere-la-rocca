@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
         total: total,
         status: 'waiting',
         notes: data.notes || '',
+        pickup_time: data.pickup_time || null,
       });
       
       // Debug - verifichiamo i dati del nuovo ordine prima del salvataggio

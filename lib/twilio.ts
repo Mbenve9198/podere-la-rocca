@@ -44,6 +44,20 @@ export const sendOrderNotification = async (order: any) => {
       `${item.name} x${item.quantity}`
     ).join(', ');
     
+    // Aggiungiamo l'informazione sull'orario di ritiro se presente
+    let itemsInfo = itemsList;
+    
+    // Verifichiamo se è un ordine Light Lunch controllando gli item
+    const hasLightLunchItems = order.items.some((item: any) => 
+      item.productId?.includes('lightLunch') || 
+      item.name?.toLowerCase().includes('light lunch')
+    );
+    
+    // Se è un Light Lunch e c'è un orario di ritiro, lo aggiungiamo alle info
+    if (hasLightLunchItems && order.pickup_time) {
+      itemsInfo += `\n\n⏰ *RITIRO LIGHT LUNCH*: ${order.pickup_time}`;
+    }
+    
     // Prepariamo l'ID dell'ordine e il percorso di completamento
     const orderId = order._id.toString();
     const completeOrderPath = `${orderId}/complete`;
@@ -53,7 +67,7 @@ export const sendOrderNotification = async (order: any) => {
       1: order.location, // Zona dell'ordine
       2: order.customerName, // Nome cliente
       3: order.locationDetail || 'Non specificata', // Posizione dettagliata
-      4: itemsList, // Items ordinati
+      4: itemsInfo, // Items ordinati + informazioni sull'orario di ritiro
       5: order.total.toFixed(2), // Totale dell'ordine
       6: completeOrderPath // ID dell'ordine + /complete per l'URL di completamento
     };

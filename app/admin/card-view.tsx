@@ -14,6 +14,7 @@ type Order = {
   status: "waiting" | "processing" | "completed" | "cancelled"
   items: { id: string; name: string; price: number; quantity: number }[]
   total: number
+  pickup_time?: string | null
 }
 
 type AdminCardViewProps = {
@@ -123,6 +124,15 @@ export default function AdminCardView({ orders, onViewDetails, onUpdateStatus, u
     }
   }
 
+  // Verifica se l'ordine contiene prodotti Light Lunch
+  const hasLightLunchItems = (order: Order) => {
+    return order.items.some(item => 
+      item.id.startsWith("lightLunch_") || 
+      item.id.includes("lightLunch") || 
+      item.name.toLowerCase().includes("light lunch")
+    )
+  }
+
   // Handle swipe
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100
@@ -208,6 +218,17 @@ export default function AdminCardView({ orders, onViewDetails, onUpdateStatus, u
                     {currentOrder.locationDetail && ` - ${currentOrder.locationDetail}`}
                   </p>
                 </div>
+
+                {/* Orario di ritiro Light Lunch */}
+                {hasLightLunchItems(currentOrder) && currentOrder.pickup_time && (
+                  <div className="bg-amber-100 p-3 rounded-lg mb-4 flex items-start">
+                    <span className="text-amber-600 text-lg mr-2">⏰</span>
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Orario ritiro Light Lunch</p>
+                      <p className="text-sm text-amber-700">{currentOrder.pickup_time}</p>
+                    </div>
+                  </div>
+                )}
 
                 <h3 className="font-medium text-gray-700 mb-2">Prodotti:</h3>
                 <div className="space-y-2 mb-4">
