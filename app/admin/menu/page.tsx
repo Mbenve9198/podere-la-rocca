@@ -86,16 +86,22 @@ export default function MenuManagement() {
   const saveCategory = async (category: ICategory) => {
     try {
       setLoading(true)
-      const isNew = !category._id
+      const isNew = !category._id || category._id === ''
       const method = isNew ? 'POST' : 'PUT'
-      const url = isNew ? '/api/categories' : `/api/categories/${category._id}`
+      const url = isNew ? '/api/categories' : `/api/categories/${category._id!}`
+      
+      // Per le nuove categorie, rimuovi il campo _id se è vuoto
+      const categoryData = isNew ? { ...category } : category
+      if (isNew) {
+        delete categoryData._id
+      }
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(category)
+        body: JSON.stringify(categoryData)
       })
       
       const result = await response.json()
@@ -120,16 +126,22 @@ export default function MenuManagement() {
   const saveProduct = async (product: IProduct) => {
     try {
       setLoading(true)
-      const isNew = !product._id
+      const isNew = !product._id || product._id === ''
       const method = isNew ? 'POST' : 'PUT'
-      const url = isNew ? '/api/products' : `/api/products/${product._id}`
+      const url = isNew ? '/api/products' : `/api/products/${product._id!}`
+      
+      // Per i nuovi prodotti, rimuovi il campo _id se è vuoto
+      const productData = isNew ? { ...product } : product
+      if (isNew) {
+        delete productData._id
+      }
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(product)
+        body: JSON.stringify(productData)
       })
       
       const result = await response.json()
@@ -329,7 +341,7 @@ export default function MenuManagement() {
                   variant="ghost"
                   size="sm"
                   className="text-gray-500 hover:text-red-500"
-                  onClick={() => deleteCategory(category._id)}
+                  onClick={() => category._id && deleteCategory(category._id)}
                 >
                   <span className="text-lg">🗑️</span>
                 </Button>
@@ -387,7 +399,7 @@ export default function MenuManagement() {
             variant={filterCategory === category._id ? "default" : "outline"}
             className={`whitespace-nowrap ${filterCategory === category._id ? "bg-amber-500 hover:bg-amber-600" : "border-amber-300 text-amber-700"}`}
             size="sm"
-            onClick={() => setFilterCategory(category._id)}
+            onClick={() => setFilterCategory(category._id || null)}
           >
             {category.translations.it}
           </Button>
@@ -395,7 +407,7 @@ export default function MenuManagement() {
       </div>
 
       {/* Light Lunch Settings */}
-      {selectedCategory?.name === "lightLunch" && (
+      {selectedCategory?.name === "lightLunch" && selectedCategory._id && (
         <div className="mt-8">
           <LightLunchSettings categoryId={selectedCategory._id} />
         </div>
@@ -437,7 +449,7 @@ export default function MenuManagement() {
                     variant="ghost"
                     size="sm"
                     className="text-gray-500 hover:text-red-500 mr-1"
-                    onClick={() => deleteProduct(product._id)}
+                    onClick={() => product._id && deleteProduct(product._id)}
                   >
                     <span className="text-lg">🗑️</span>
                   </Button>
@@ -445,7 +457,7 @@ export default function MenuManagement() {
                     variant="ghost"
                     size="sm"
                     className={product.available ? "text-green-500" : "text-gray-400"}
-                    onClick={() => handleToggleAvailability(product._id, product.available)}
+                    onClick={() => product._id && handleToggleAvailability(product._id, product.available)}
                   >
                     {product.available ? <span className="text-xl">🟢</span> : <span className="text-xl">⚪</span>}
                   </Button>

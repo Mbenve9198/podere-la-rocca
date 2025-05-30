@@ -4,7 +4,7 @@ export interface ITranslation {
 }
 
 export interface ICategory {
-  _id: string
+  _id?: string
   name: string
   translations: ITranslation
   order: number
@@ -20,7 +20,7 @@ export interface IProductTranslation extends ITranslation {
 }
 
 export interface IProduct {
-  _id: string
+  _id?: string
   name: string
   price: number
   category: string
