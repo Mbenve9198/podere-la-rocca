@@ -9,6 +9,7 @@ import PickupTimeSelector from "@/components/pickup-time-selector"
 import { toast } from "react-hot-toast"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { BYPASS_SERVICE_HOURS } from "@/lib/test-bypass"
 
 type OrderSummaryProps = {
   cart: { id: string; name: string; price: number; quantity: number }[]
@@ -81,11 +82,6 @@ export default function OrderSummary({
       fetchSettings()
     }
   }, [hasLightLunchItems])
-
-  // ⚠️ TEMPORANEO (SOLO TEST): bypassa il controllo degli orari di servizio
-  // e della disponibilità Light Lunch per poter inviare un ordine in qualsiasi
-  // momento. RIMUOVERE questa riga per ripristinare i controlli normali.
-  const BYPASS_SERVICE_HOURS = true
 
   const validateOrderTime = () => {
     if (BYPASS_SERVICE_HOURS) {
