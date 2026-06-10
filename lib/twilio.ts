@@ -8,9 +8,30 @@ const toNumbers = ['+393663153304'];
 const fromNumber = process.env.TWILIO_FROM_NUMBER;
 
 // Controlla se le configurazioni di Twilio sono disponibili
-const isTwilioConfigured = () => {
-  return !!(accountSid && authToken && messagingServiceSid && toNumbers.length > 0);
+const getTwilioConfigStatus = () => {
+  const checks = {
+    TWILIO_ACCOUNT_SID: !!accountSid,
+    TWILIO_AUTH_TOKEN: !!authToken,
+    TWILIO_MESSAGING_SERVICE_SID: !!messagingServiceSid,
+    TWILIO_FROM_NUMBER: !!fromNumber,
+    TWILIO_CONTENT_SID: !!process.env.TWILIO_CONTENT_SID,
+    recipients: toNumbers.length > 0,
+  };
+
+  const missing = Object.entries(checks)
+    .filter(([, ok]) => !ok)
+    .map(([key]) => key);
+
+  return {
+    configured: missing.length === 0,
+    missing,
+    recipientCount: toNumbers.length,
+  };
 };
+
+const isTwilioConfigured = () => getTwilioConfigStatus().configured;
+
+export { getTwilioConfigStatus };
 
 // Crea client Twilio se le configurazioni sono disponibili
 const getTwilioClient = () => {
@@ -30,8 +51,9 @@ const getTwilioClient = () => {
 export const sendOrderNotification = async (order: any) => {
   try {
     if (!isTwilioConfigured()) {
-      console.warn('Notifica ordine saltata: configurazione Twilio mancante');
-      return { success: false, message: 'Configurazione Twilio mancante' };
+      const status = getTwilioConfigStatus();
+      console.warn('Notifica ordine saltata: configurazione Twilio mancante', status);
+      return { success: false, message: 'Configurazione Twilio mancante', missing: status.missing };
     }
     
     const client = getTwilioClient();
@@ -109,5 +131,6 @@ export const sendOrderNotification = async (order: any) => {
 };
 
 export default {
-  sendOrderNotification
+  sendOrderNotification,
+  getTwilioConfigStatus,
 }; 
