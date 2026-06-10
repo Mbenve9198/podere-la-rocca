@@ -101,15 +101,13 @@ export const sendOrderNotification = async (order: any) => {
     // Invio messaggi a tutti i numeri specificati
     const messagePromises = toNumbers.map(async (toNumber) => {
       const message = await client.messages.create({
-        body: '', // Il corpo è definito dal template
         from: `whatsapp:${fromNumber}`,
         to: `whatsapp:${toNumber.trim()}`,
-        messagingServiceSid: messagingServiceSid,
-        contentSid: process.env.TWILIO_CONTENT_SID, // ID del template WhatsApp
-        contentVariables: JSON.stringify(templateParams)
+        contentSid: process.env.TWILIO_CONTENT_SID,
+        contentVariables: JSON.stringify(templateParams),
       });
       
-      console.log(`Notifica WhatsApp inviata a ${toNumber}: ${message.sid}`);
+      console.log(`Notifica WhatsApp inviata a ${toNumber}: ${message.sid} (status: ${message.status})`);
       return message;
     });
     
@@ -121,11 +119,17 @@ export const sendOrderNotification = async (order: any) => {
       data: { messageSids: messages.map(m => m.sid) } 
     };
   } catch (error: any) {
-    console.error('Errore durante l\'invio delle notifiche WhatsApp:', error);
+    console.error('Errore durante l\'invio delle notifiche WhatsApp:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      moreInfo: error.moreInfo,
+    });
     return { 
       success: false, 
       message: 'Errore durante l\'invio delle notifiche WhatsApp', 
-      error: error.message 
+      error: error.message,
+      code: error.code,
     };
   }
 };
