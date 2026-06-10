@@ -82,7 +82,16 @@ export default function OrderSummary({
     }
   }, [hasLightLunchItems])
 
+  // ⚠️ TEMPORANEO (SOLO TEST): bypassa il controllo degli orari di servizio
+  // e della disponibilità Light Lunch per poter inviare un ordine in qualsiasi
+  // momento. RIMUOVERE questa riga per ripristinare i controlli normali.
+  const BYPASS_SERVICE_HOURS = true
+
   const validateOrderTime = () => {
+    if (BYPASS_SERVICE_HOURS) {
+      return { isValid: true, errors: [] as string[] }
+    }
+
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinutes = now.getMinutes()
