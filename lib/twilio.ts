@@ -4,7 +4,9 @@ import twilio from 'twilio';
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-const toNumbers = ['+393663153304'];
+const toNumbers = (process.env.TWILIO_ADMIN_WHATSAPP?.split(',') || [])
+  .map((n) => n.trim())
+  .filter(Boolean);
 const fromNumber = process.env.TWILIO_FROM_NUMBER;
 
 // Controlla se le configurazioni di Twilio sono disponibili
@@ -15,7 +17,7 @@ const getTwilioConfigStatus = () => {
     TWILIO_MESSAGING_SERVICE_SID: !!messagingServiceSid,
     TWILIO_FROM_NUMBER: !!fromNumber,
     TWILIO_CONTENT_SID: !!process.env.TWILIO_CONTENT_SID,
-    recipients: toNumbers.length > 0,
+    TWILIO_ADMIN_WHATSAPP: toNumbers.length > 0,
   };
 
   const missing = Object.entries(checks)
@@ -26,6 +28,7 @@ const getTwilioConfigStatus = () => {
     configured: missing.length === 0,
     missing,
     recipientCount: toNumbers.length,
+    recipients: toNumbers,
   };
 };
 
