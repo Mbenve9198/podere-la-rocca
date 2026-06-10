@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { BYPASS_SERVICE_HOURS } from "@/lib/test-bypass"
 
 interface ServiceHoursWarningProps {
   language: string
@@ -16,13 +15,6 @@ export default function ServiceHoursWarning({ language }: ServiceHoursWarningPro
 
   useEffect(() => {
     const checkAvailability = () => {
-      if (BYPASS_SERVICE_HOURS) {
-        setIsAvailable(true)
-        setTimeLeft("—")
-        setCurrentPeriod(null)
-        return
-      }
-
       const now = new Date()
       const currentHour = now.getHours()
       const currentMinutes = now.getMinutes()

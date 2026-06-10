@@ -9,7 +9,6 @@ import PickupTimeSelector from "@/components/pickup-time-selector"
 import { toast } from "react-hot-toast"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { BYPASS_SERVICE_HOURS } from "@/lib/test-bypass"
 
 type OrderSummaryProps = {
   cart: { id: string; name: string; price: number; quantity: number }[]
@@ -84,10 +83,6 @@ export default function OrderSummary({
   }, [hasLightLunchItems])
 
   const validateOrderTime = () => {
-    if (BYPASS_SERVICE_HOURS) {
-      return { isValid: true, errors: [] as string[] }
-    }
-
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinutes = now.getMinutes()

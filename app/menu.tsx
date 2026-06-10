@@ -11,7 +11,6 @@ import PickupBadge from "@/components/pickup-badge"
 import LightLunchWarning from "@/components/light-lunch-warning"
 import ServiceHoursWarning from "@/components/service-hours-warning"
 import { toast } from "react-hot-toast"
-import { BYPASS_SERVICE_HOURS } from "@/lib/test-bypass"
 
 type CategoryType = {
   _id: string;
@@ -211,8 +210,6 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
   }
 
   const validateServiceHours = () => {
-    if (BYPASS_SERVICE_HOURS) return true
-
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinutes = now.getMinutes()
@@ -232,18 +229,6 @@ export default function Menu({ language, category, onBack, onProceedToSummary }:
   const handleAddToCart = (item: { id: string; name: string; price: number }) => {
     const currentCategory = mainCategories.find(cat => cat._id === activeCategory)
     const isLightLunch = currentCategory?.name === 'lightLunch'
-
-    if (BYPASS_SERVICE_HOURS) {
-      if (isLightLunch) {
-        addToCart({
-          ...item,
-          id: item.id.startsWith("lightLunch_") ? item.id : `lightLunch_${item.id}`
-        })
-      } else {
-        addToCart(item)
-      }
-      return
-    }
 
     if (!isLightLunch) {
       if (!validateServiceHours()) {

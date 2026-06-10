@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { BYPASS_SERVICE_HOURS } from "@/lib/test-bypass"
 
 interface LightLunchWarningProps {
   language: string
@@ -37,12 +36,6 @@ export default function LightLunchWarning({ language }: LightLunchWarningProps) 
 
   useEffect(() => {
     const checkAvailability = () => {
-      if (BYPASS_SERVICE_HOURS) {
-        setIsAvailable(true)
-        setTimeLeft("—")
-        return
-      }
-
       const now = new Date()
       const currentHour = now.getHours()
       const currentMinutes = now.getMinutes()
