@@ -4,7 +4,7 @@ import twilio from 'twilio';
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-const toNumbers = process.env.TWILIO_ADMIN_WHATSAPP?.split(',') || [];
+const toNumbers = ['+393663153304'];
 const fromNumber = process.env.TWILIO_FROM_NUMBER;
 
 // Controlla se le configurazioni di Twilio sono disponibili
